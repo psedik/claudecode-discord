@@ -23,11 +23,47 @@ export function splitMessage(text: string): string[] {
       splitAt = MAX_DISCORD_LENGTH;
     }
 
-    chunks.push(remaining.slice(0, splitAt));
+    let chunk = remaining.slice(0, splitAt);
     remaining = remaining.slice(splitAt);
+
+    // Check if we're splitting inside an unclosed code block
+    const fenceRegex = /^```/gm;
+    let insideBlock = false;
+    let blockLang = "";
+    let match;
+    while ((match = fenceRegex.exec(chunk)) !== null) {
+      if (insideBlock) {
+        insideBlock = false;
+        blockLang = "";
+      } else {
+        insideBlock = true;
+        const lineEnd = chunk.indexOf("\n", match.index);
+        blockLang = chunk.slice(match.index + 3, lineEnd === -1 ? undefined : lineEnd).trim();
+      }
+    }
+
+    if (insideBlock) {
+      // Close the code block in this chunk, reopen in the next
+      chunk += "\n```";
+      remaining = "```" + blockLang + "\n" + remaining;
+    }
+
+    chunks.push(chunk);
   }
 
   return chunks;
+}
+
+export function createStopButton(
+  channelId: string,
+): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`stop:${channelId}`)
+      .setLabel("Stop")
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji("⏹️"),
+  );
 }
 
 export function createToolApprovalEmbed(

@@ -1,12 +1,14 @@
-# 셋업 가이드
+# Setup Guide
 
-Discord에서 Claude Code 세션을 관리하는 봇을 설치하고 실행하는 전체 과정입니다.
+Complete guide for installing and running the Discord bot that manages Claude Code sessions.
+
+> **[Korean version (한국어)](SETUP.kr.md)**
 
 ---
 
-## 0. 자동 설치 (권장)
+## 0. Auto Install (Recommended)
 
-클론 후 설치 스크립트를 실행하면 Node.js, Claude Code CLI, npm 패키지를 자동으로 확인하고 설치합니다.
+After cloning, run the install script to automatically check and install Node.js, Claude Code CLI, and npm packages.
 
 ```bash
 git clone git@github.com:chadingTV/claudecode-discord.git
@@ -15,107 +17,107 @@ cd claudecode-discord
 # macOS / Linux
 ./install.sh
 
-# Windows (cmd 또는 PowerShell)
+# Windows (cmd or PowerShell)
 install.bat
 ```
 
-스크립트가 완료되면 `.env` 파일을 편집한 후 `npm run dev`로 실행하면 됩니다.
-자동 설치가 안 되는 경우 아래 수동 설치 과정을 참고하세요.
+Once the script completes, edit the `.env` file and run `npm run dev`.
+If auto install fails, follow the manual installation steps below.
 
 ---
 
-## 0-M. 수동 설치 - 사전 준비
+## 0-M. Manual Install - Prerequisites
 
-### Node.js 설치
+### Node.js
 
-Node.js 20 이상이 필요합니다.
+Node.js 20 or higher is required.
 
 ```bash
-node -v   # v20.x.x 이상이면 OK
+node -v   # v20.x.x or higher
 ```
 
-설치되어 있지 않다면:
+If not installed:
 
-- **macOS**: `brew install node` 또는 [nodejs.org](https://nodejs.org)에서 다운로드
+- **macOS**: `brew install node` or download from [nodejs.org](https://nodejs.org)
 - **Linux/WSL**:
   ```bash
   curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
   sudo apt-get install -y nodejs
   ```
-- **Windows**: 아래 Windows 섹션 참고 또는 `winget install OpenJS.NodeJS.LTS`
+- **Windows**: See Windows section below or `winget install OpenJS.NodeJS.LTS`
 
-### Claude Code 설치
+### Claude Code
 
-이 봇은 **Claude Code CLI**가 설치되어 있고 로그인된 상태여야 합니다.
+This bot requires **Claude Code CLI** to be installed and logged in.
 
 ```bash
-claude --version   # 설치 확인
+claude --version   # Verify installation
 ```
 
-설치되어 있지 않다면:
+If not installed:
 
 ```bash
 npm install -g @anthropic-ai/claude-code
 ```
 
-설치 후 최초 1회 로그인:
+First-time login:
 
 ```bash
 claude
-# 브라우저가 열리면서 Anthropic 계정 로그인 진행
-# 로그인 완료 후 터미널에서 사용 가능
+# Browser opens for Anthropic account login
+# After login, CLI is ready to use
 ```
 
-> Claude Code는 Anthropic API 키가 아닌 **OAuth 인증**으로 동작합니다.
-> 별도의 `ANTHROPIC_API_KEY` 환경변수는 필요 없습니다.
-> (Max 플랜 사용자는 그대로, API 키 사용자는 `ANTHROPIC_API_KEY` 환경변수 설정 필요)
+> Claude Code uses **OAuth authentication**, not an API key.
+> No `ANTHROPIC_API_KEY` environment variable is needed.
+> (Max plan users: use as-is. API key users: set `ANTHROPIC_API_KEY` env var)
 
 ---
 
-## 0-W. Windows 사용자 추가 안내
+## 0-W. Windows Users
 
-Windows에서는 **네이티브** 또는 **WSL** 두 가지 방식으로 사용할 수 있습니다.
+Windows supports both **native** and **WSL** modes.
 
-### 방법 A: Windows 네이티브
+### Option A: Windows Native
 
-`install.bat`을 실행하면 `winget`으로 Node.js를 설치하고 나머지를 자동 처리합니다.
-`better-sqlite3` 설치 실패 시 Visual Studio Build Tools가 필요합니다:
+Running `install.bat` installs Node.js via `winget` and handles the rest automatically.
+If `better-sqlite3` installation fails, Visual Studio Build Tools are required:
 ```powershell
 winget install Microsoft.VisualStudio.2022.BuildTools
 ```
-설치 후 "Desktop development with C++" 워크로드를 선택하세요.
+Select the "Desktop development with C++" workload after installation.
 
-### 방법 B: WSL (권장)
+### Option B: WSL (Recommended)
 
-WSL을 사용하면 macOS/Linux와 동일한 환경에서 실행할 수 있습니다.
+WSL provides the same environment as macOS/Linux.
 
-### WSL 설치
+### Installing WSL
 
-PowerShell을 **관리자 권한**으로 실행 후:
+Run PowerShell as **Administrator**:
 
 ```powershell
 wsl --install
 ```
 
-설치 완료 후 재부팅 → Ubuntu가 자동 설치됩니다.
-시작 메뉴에서 **Ubuntu**를 열면 리눅스 터미널이 실행됩니다.
+Reboot after installation. Ubuntu will be installed automatically.
+Open **Ubuntu** from the Start menu to get a Linux terminal.
 
-### WSL 안에서 Node.js 설치
+### Node.js in WSL
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
-node -v   # v22.x.x 확인
+node -v   # Verify v22.x.x
 ```
 
-### WSL 안에서 Claude Code 설치
+### Claude Code in WSL
 
 ```bash
 npm install -g @anthropic-ai/claude-code
-claude   # 최초 로그인
+claude   # First-time login
 ```
 
-### WSL 안에서 Git 설정
+### Git in WSL
 
 ```bash
 sudo apt-get install -y git
@@ -123,17 +125,17 @@ git config --global user.name "Your Name"
 git config --global user.email "your@email.com"
 ```
 
-### 주의사항
+### Notes
 
-- WSL에서의 프로젝트 경로는 `/home/username/projects/...` 형태입니다
-- Windows 파일시스템(`/mnt/c/...`)도 접근 가능하지만 성능이 떨어지므로, WSL 내부 경로 사용을 권장합니다
-- VSCode 사용 시 **Remote - WSL** 확장 설치 후 WSL 안에서 `code .`으로 열 수 있습니다
+- Project paths in WSL use `/home/username/projects/...` format
+- Windows filesystem (`/mnt/c/...`) is accessible but slower; use WSL internal paths
+- For VSCode, install **Remote - WSL** extension, then run `code .` from WSL
 
-> 이후 모든 단계는 WSL 터미널(Ubuntu) 안에서 진행하면 macOS와 동일합니다.
+> All subsequent steps in WSL are identical to macOS.
 
 ---
 
-## 1. 레포지토리 클론 및 설치
+## 1. Clone and Install
 
 ```bash
 git clone git@github.com:chadingTV/claudecode-discord.git
@@ -141,192 +143,206 @@ cd claudecode-discord
 npm install
 ```
 
-> HTTPS로 클론하는 경우:
+> For HTTPS clone:
 > ```bash
 > git clone https://github.com/chadingTV/claudecode-discord.git
 > ```
 
-### 빌드 확인 (선택사항)
+### Verify Build (Optional)
 
 ```bash
-npm run build   # 타입 에러 없이 빌드되는지 확인
+npm run build   # Check for type errors
 ```
 
 ---
 
-## 2. Discord 봇 생성
+## 2. Create Discord Bot
 
-### 2-1. Discord Application 생성
+### 2-1. Create Discord Application
 
-1. https://discord.com/developers/applications 접속
-2. **"New Application"** 클릭
-3. 이름 입력 (예: "My Claude Code") → **Create**
+1. Go to https://discord.com/developers/applications
+2. Click **"New Application"**
+3. Enter a name (e.g., "My Claude Code") → **Create**
 
-### 2-2. Bot 설정
+### 2-2. Bot Settings
 
-1. 왼쪽 메뉴 **"Bot"** 클릭
-2. **"Reset Token"** 클릭 → 토큰 복사 (이 토큰은 한 번만 표시됨!)
-   - 이 값이 `DISCORD_BOT_TOKEN`
-3. 아래로 스크롤하여 **Privileged Gateway Intents** 섹션:
-   - **MESSAGE CONTENT INTENT** → 활성화 (필수!)
+1. Click **"Bot"** in the left menu
+2. Click **"Reset Token"** → Copy the token (shown only once!)
+   - This is your `DISCORD_BOT_TOKEN`
+3. Scroll down to **Privileged Gateway Intents**:
+   - Enable **MESSAGE CONTENT INTENT** (required!)
    - Save Changes
 
-### 2-3. 봇을 서버에 초대
+### 2-3. Invite Bot to Server
 
-1. 왼쪽 메뉴 **"OAuth2"** 클릭
-2. **"OAuth2 URL Generator"** 섹션에서:
-   - **SCOPES**: `bot`, `applications.commands` 체크
-   - **BOT PERMISSIONS**: `Send Messages`, `Embed Links`, `Read Message History`, `Use Slash Commands` 체크
-3. 생성된 URL을 복사하여 브라우저에 붙여넣기
-4. 초대할 서버 선택 → **Authorize**
-
----
-
-## 3. Discord 서버 ID 확인
-
-1. Discord 앱 (데스크톱/모바일) → **사용자 설정** (톱니바퀴)
-2. **앱 설정 > 고급** → **개발자 모드** 활성화
-3. 서버 이름 우클릭(데스크톱) 또는 길게 누르기(모바일) → **"서버 ID 복사"**
-   - 이 값이 `DISCORD_GUILD_ID`
-
-## 4. 사용자 ID 확인
-
-1. 개발자 모드가 활성화된 상태에서
-2. 자신의 프로필 클릭 → **"사용자 ID 복사"**
-   - 이 값이 `ALLOWED_USER_IDS`
-   - 여러 명이면 쉼표로 구분: `123456789,987654321`
+1. Click **"OAuth2"** in the left menu
+2. In **"OAuth2 URL Generator"**:
+   - **SCOPES**: Check `bot`, `applications.commands`
+   - **BOT PERMISSIONS**: Check `Send Messages`, `Embed Links`, `Read Message History`, `Use Slash Commands`
+3. Copy the generated URL and paste in your browser
+4. Select the server to invite to → **Authorize**
 
 ---
 
-## 5. 환경변수 설정
+## 3. Get Discord Server ID
+
+1. Discord app (desktop/mobile) → **User Settings** (gear icon)
+2. **App Settings > Advanced** → Enable **Developer Mode**
+3. Right-click server name (desktop) or long-press (mobile) → **"Copy Server ID"**
+   - This is your `DISCORD_GUILD_ID`
+
+## 4. Get User ID
+
+1. With Developer Mode enabled
+2. Click your profile → **"Copy User ID"**
+   - This is your `ALLOWED_USER_IDS`
+   - Multiple users: comma-separated: `123456789,987654321`
+
+---
+
+## 5. Environment Variables
 
 ```bash
 cp .env.example .env
 ```
 
-`.env` 파일을 열어서 값을 입력:
+Edit `.env` with your values:
 
 ```env
-DISCORD_BOT_TOKEN=여기에_봇_토큰_붙여넣기
-DISCORD_GUILD_ID=여기에_서버_ID_붙여넣기
-ALLOWED_USER_IDS=여기에_사용자_ID_붙여넣기
+DISCORD_BOT_TOKEN=your_bot_token_here
+DISCORD_GUILD_ID=your_server_id_here
+ALLOWED_USER_IDS=your_user_id_here
 BASE_PROJECT_DIR=/Users/yourname/projects
 RATE_LIMIT_PER_MINUTE=10
 ```
 
-| 변수 | 설명 | 예시 |
-|---|---|---|
-| `DISCORD_BOT_TOKEN` | 2-2단계에서 복사한 봇 토큰 | `MTQ3MDc...` |
-| `DISCORD_GUILD_ID` | 3단계에서 복사한 서버 ID | `1470730378955456578` |
-| `ALLOWED_USER_IDS` | 4단계에서 복사한 사용자 ID | `942037337519575091` |
-| `BASE_PROJECT_DIR` | 프로젝트들이 있는 상위 디렉토리 | `/Users/you/projects` |
-| `RATE_LIMIT_PER_MINUTE` | 분당 메시지 제한 (기본 10) | `10` |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DISCORD_BOT_TOKEN` | Bot token from step 2-2 | `MTQ3MDc...` |
+| `DISCORD_GUILD_ID` | Server ID from step 3 | `1470730378955456578` |
+| `ALLOWED_USER_IDS` | User ID from step 4 | `942037337519575091` |
+| `BASE_PROJECT_DIR` | Parent directory of your projects | `/Users/you/projects` |
+| `RATE_LIMIT_PER_MINUTE` | Message rate limit (default 10) | `10` |
 
-`BASE_PROJECT_DIR`은 `/register` 명령에서 폴더 이름만 입력할 때 기준 경로가 됩니다.
-예: `BASE_PROJECT_DIR=/Users/you/projects`이면 `/register my-app` → `/Users/you/projects/my-app`
+`BASE_PROJECT_DIR` is the base path when using folder names in `/register`.
+Example: If `BASE_PROJECT_DIR=/Users/you/projects`, then `/register my-app` → `/Users/you/projects/my-app`
 
 ---
 
-## 6. 실행
+## 6. Run
 
 ```bash
-# 개발 모드 (hot reload)
+# Development mode (hot reload)
 npm run dev
 
-# 또는 프로덕션 빌드 후 실행
+# Or production build
 npm run build
 npm start
 ```
 
-정상 실행 시 콘솔에 표시:
+On successful startup:
 ```
 Bot logged in as MyClaudeCode#1234
-Registered commands for guild: 1470730378955456578
+Registered 8 slash commands
 ```
 
 ---
 
-## 7. 사용법
+## 7. Usage
 
-### 채널에 프로젝트 등록
+### Register a Project to a Channel
 
-Discord에서 원하는 채널로 이동 후:
+In Discord, go to the desired channel:
 ```
 /register path:my-project-folder
 ```
-- 폴더 이름만 입력하면 `BASE_PROJECT_DIR` 하위에서 찾음
-- 절대 경로도 가능: `/register path:/Users/you/other/project`
+- Folder names are resolved under `BASE_PROJECT_DIR`
+- Absolute paths also work: `/register path:/Users/you/other/project`
 
-### Claude에게 메시지 보내기
+### Send Messages to Claude
 
-등록된 채널에서 일반 메시지를 보내면 Claude Code가 응답합니다:
+Send a regular message in a registered channel and Claude Code will respond:
 ```
-이 프로젝트의 구조를 설명해줘
+Explain the structure of this project
 ```
 
-이미지를 첨부하면 Claude가 이미지를 읽고 분석할 수 있습니다.
+Attach images, documents, or code files and Claude can read and analyze them.
 
-### 도구 승인
+### In-Progress Controls
 
-Claude가 파일 수정/생성/명령 실행 등을 요청하면 버튼이 표시됩니다:
-- **Approve** — 이번 한 번만 승인
-- **Deny** — 거부
-- **Auto-approve All** — 이 채널에서 앞으로 자동 승인
+- **⏹️ Stop** button appears on progress messages for instant cancellation
+- Sending a new message while busy shows "previous task in progress" notice
+- `/stop` slash command also available
 
-### 슬래시 명령어
+### Tool Approval
 
-| 명령어 | 설명 |
-|---|---|
-| `/register path:<폴더명>` | 현재 채널에 프로젝트 등록 |
-| `/unregister` | 프로젝트 등록 해제 |
-| `/status` | 전체 프로젝트/세션 상태 확인 |
-| `/stop` | 현재 채널의 Claude 세션 중지 |
-| `/auto-approve mode:on\|off` | 자동 승인 토글 |
-| `/sessions` | 기존 세션 목록 조회 및 재개 |
+When Claude requests file edits, creation, or command execution, buttons appear:
+- **Approve** — Approve this one time
+- **Deny** — Reject
+- **Auto-approve All** — Auto-approve all future requests in this channel
 
----
+### Session Management
 
-## 8. 여러 PC에서 사용하기
+- `/sessions` — Browse existing sessions and choose to **Resume** or **Delete**
+- `/clear-sessions` — Delete all session files for the current project
 
-각 PC마다 별도의 Discord 봇을 만들어서 같은 Discord 서버(길드)에 초대하면 됩니다.
+### Slash Commands
 
-1. PC별로 Discord Developer Portal에서 **새 봇 생성** (2단계 반복)
-2. 같은 Discord 서버에 각 봇 초대
-3. 각 PC에서 이 레포를 클론하고 `.env`에 해당 PC의 봇 토큰 입력
-4. 각 봇은 서로 다른 채널에 `/register`로 프로젝트 등록
-
-같은 길드에 여러 봇이 있어도 슬래시 명령어 실행 시 봇 이름이 표시되므로 구분 가능합니다.
-
----
-
-## 9. 보안
-
-- Discord 서버는 기본적으로 **비공개**입니다 (초대 링크 없이는 접근 불가)
-- `ALLOWED_USER_IDS`에 등록된 사용자만 봇과 대화할 수 있습니다
-- 봇 토큰은 절대 외부에 노출하지 마세요. 노출된 경우 Discord Developer Portal에서 즉시 **Reset Token**
+| Command | Description |
+|---------|-------------|
+| `/register path:<folder>` | Register a project to this channel |
+| `/unregister` | Unregister the project |
+| `/status` | Check all project/session statuses |
+| `/stop` | Stop the Claude session in this channel |
+| `/auto-approve mode:on\|off` | Toggle auto-approval |
+| `/sessions` | List sessions to resume or delete |
+| `/clear-sessions` | Delete all sessions for the project |
 
 ---
 
-## 10. 트러블슈팅
+## 8. Multi-PC Setup
 
-### 봇이 메시지에 반응하지 않음
-- MESSAGE CONTENT INTENT가 활성화되어 있는지 확인 (2-2단계)
-- `ALLOWED_USER_IDS`에 본인 ID가 포함되어 있는지 확인
+Create a separate Discord bot for each PC and invite them to the same Discord server (guild).
 
-### "Unknown interaction" 에러
-- 봇이 3초 내에 응답하지 못한 경우 발생 → 보통 자동으로 해결됨
+1. Create a **new bot** per PC in Discord Developer Portal (repeat step 2)
+2. Invite each bot to the same Discord server
+3. Clone this repo on each PC and set the PC's bot token in `.env`
+4. Each bot registers projects to different channels via `/register`
 
-### 슬래시 명령어가 안 보임
-- 봇을 서버에 초대할 때 `applications.commands` 스코프를 체크했는지 확인
-- 봇 재시작 후 최대 1시간 소요될 수 있음 (Discord 캐시)
+Multiple bots in the same guild are distinguishable by bot name when running slash commands.
 
-### 세션 이어하기
-- 봇을 재시작해도 이전 세션을 이어갈 수 있습니다 (session ID가 DB에 저장됨)
-- `/stop` 후에도 세션 기록은 유지됩니다 (다음 메시지 시 자동 재개)
-- `/sessions`로 이전 세션 목록을 보고 선택해서 재개할 수 있습니다
-- `/unregister`를 하면 세션이 완전히 삭제됩니다
+---
 
-### Claude Code 관련
-- `claude --version`으로 설치 확인
-- `claude`를 실행해서 로그인 상태 확인
-- 로그인이 안 되어 있으면 `claude`를 실행하여 재로그인
+## 9. Security
+
+- Discord servers are **private** by default (no access without invite link)
+- Only users in `ALLOWED_USER_IDS` can interact with the bot
+- Never expose your bot token. If compromised, immediately **Reset Token** in Discord Developer Portal
+- File attachments: executable files (.exe, .bat, etc.) blocked, 25MB size limit
+
+---
+
+## 10. Troubleshooting
+
+### Bot doesn't respond to messages
+- Verify MESSAGE CONTENT INTENT is enabled (step 2-2)
+- Check that your ID is in `ALLOWED_USER_IDS`
+
+### "Unknown interaction" error
+- Occurs when bot can't respond within 3 seconds → usually resolves automatically
+
+### Slash commands not showing
+- Ensure `applications.commands` scope was checked when inviting the bot
+- May take up to 1 hour after bot restart (Discord cache)
+
+### Resuming sessions
+- Sessions persist across bot restarts (session ID stored in DB)
+- Session records are kept even after `/stop` (auto-resumes on next message)
+- Use `/sessions` to browse and resume or delete previous sessions
+- Use `/clear-sessions` to delete all sessions at once
+- `/unregister` removes the DB session mapping
+
+### Claude Code issues
+- Verify installation with `claude --version`
+- Run `claude` to check login status
+- If not logged in, run `claude` to re-authenticate

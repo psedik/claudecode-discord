@@ -11,6 +11,7 @@ import {
 import {
   createToolApprovalEmbed,
   createResultEmbed,
+  createStopButton,
   splitMessage,
 } from "./output-formatter.js";
 
@@ -53,7 +54,11 @@ class SessionManager {
     // Streaming state
     let responseBuffer = "";
     let lastEditTime = 0;
-    let currentMessage = await channel.send("⏳ Thinking...");
+    const stopRow = createStopButton(channelId);
+    let currentMessage = await channel.send({
+      content: "⏳ Thinking...",
+      components: [stopRow],
+    });
     const EDIT_INTERVAL = 1500; // ms between edits (Discord rate limit friendly)
 
     // Activity tracking for progress display
@@ -70,7 +75,10 @@ class SessionManager {
       const secs = elapsed % 60;
       const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
       try {
-        await currentMessage.edit(`⏳ ${lastActivity} (${timeStr})`);
+        await currentMessage.edit({
+          content: `⏳ ${lastActivity} (${timeStr})`,
+          components: [stopRow],
+        });
       } catch {
         // ignore edit failures
       }
@@ -114,7 +122,10 @@ class SessionManager {
                 ? `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`
                 : `${elapsed}s`;
               try {
-                await currentMessage.edit(`⏳ ${lastActivity} (${timeStr}) [${toolUseCount} tools used]`);
+                await currentMessage.edit({
+                  content: `⏳ ${lastActivity} (${timeStr}) [${toolUseCount} tools used]`,
+                  components: [stopRow],
+                });
               } catch {
                 // ignore
               }
@@ -213,7 +224,7 @@ class SessionManager {
             lastEditTime = now;
             const chunks = splitMessage(responseBuffer);
             try {
-              await currentMessage.edit(chunks[0] || "...");
+              await currentMessage.edit({ content: chunks[0] || "...", components: [] });
               // Send additional chunks as new messages
               for (let i = 1; i < chunks.length; i++) {
                 currentMessage = await channel.send(chunks[i]);
@@ -267,6 +278,7 @@ class SessionManager {
       updateSessionStatus(channelId, "offline");
     } finally {
       clearInterval(heartbeatInterval);
+      this.sessions.delete(channelId);
     }
   }
 

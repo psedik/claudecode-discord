@@ -7,14 +7,28 @@ import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 
-const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp"];
+const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
+
+// Dangerous executable extensions that should not be downloaded
+const BLOCKED_EXTENSIONS = new Set([
+  ".exe", ".bat", ".cmd", ".com", ".msi", ".scr", ".pif",
+  ".dll", ".sys", ".drv",
+  ".vbs", ".vbe", ".wsf", ".wsh",
+]);
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB (Discord free tier limit)
 
 async function downloadAttachment(
   attachment: Attachment,
   projectPath: string,
-): Promise<string | null> {
+): Promise<{ filePath: string; isImage: boolean } | null> {
   const ext = path.extname(attachment.name ?? "").toLowerCase();
-  if (!IMAGE_EXTENSIONS.includes(ext)) return null;
+
+  // Block dangerous executables
+  if (BLOCKED_EXTENSIONS.has(ext)) return null;
+
+  // Skip files that are too large
+  if (attachment.size > MAX_FILE_SIZE) return null;
 
   const uploadDir = path.join(projectPath, ".claude-uploads");
   if (!fs.existsSync(uploadDir)) {
@@ -30,7 +44,7 @@ async function downloadAttachment(
   const fileStream = fs.createWriteStream(filePath);
   await pipeline(Readable.fromWeb(response.body as any), fileStream);
 
-  return filePath;
+  return { filePath, isImage: IMAGE_EXTENSIONS.has(ext) };
 }
 
 export async function handleMessage(message: Message): Promise<void> {
@@ -55,26 +69,36 @@ export async function handleMessage(message: Message): Promise<void> {
 
   let prompt = message.content.trim();
 
-  // Download image attachments
-  const imageAttachments = message.attachments.filter((a) => {
-    const ext = path.extname(a.name ?? "").toLowerCase();
-    return IMAGE_EXTENSIONS.includes(ext);
-  });
+  // Download attachments (images, documents, code files, etc.)
+  const imagePaths: string[] = [];
+  const filePaths: string[] = [];
 
-  const downloadedPaths: string[] = [];
-  for (const [, attachment] of imageAttachments) {
-    const filePath = await downloadAttachment(attachment, project.project_path);
-    if (filePath) downloadedPaths.push(filePath);
+  for (const [, attachment] of message.attachments) {
+    const result = await downloadAttachment(attachment, project.project_path);
+    if (!result) continue;
+    if (result.isImage) {
+      imagePaths.push(result.filePath);
+    } else {
+      filePaths.push(result.filePath);
+    }
   }
 
-  if (downloadedPaths.length > 0) {
-    const fileList = downloadedPaths.map((p) => p).join("\n");
-    prompt = `${prompt}\n\n[Attached images - use Read tool to view these files]\n${fileList}`;
+  if (imagePaths.length > 0) {
+    prompt += `\n\n[Attached images - use Read tool to view these files]\n${imagePaths.join("\n")}`;
+  }
+  if (filePaths.length > 0) {
+    prompt += `\n\n[Attached files - use Read tool to read these files]\n${filePaths.join("\n")}`;
   }
 
   if (!prompt) return;
 
   const channel = message.channel as TextChannel;
+
+  // Reject if session is already active (processing a previous message)
+  if (sessionManager.isActive(message.channelId)) {
+    await message.reply("⏳ 이전 작업이 진행 중입니다. 완료 후 다시 시도해주세요.");
+    return;
+  }
 
   // Send message to Claude session
   await sessionManager.sendMessage(channel, prompt);

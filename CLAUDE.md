@@ -2,108 +2,111 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 프로젝트 개요
+## Project Overview
 
-모바일 Discord에서 여러 프로젝트의 Claude Code 세션을 관리하는 봇. Discord 채널마다 독립적인 Claude Agent SDK 세션을 프로젝트 디렉토리에 매핑하여 실행. 쓰기 도구(Edit, Write, Bash)는 Discord 버튼으로 승인/거절 처리하고, 읽기 전용 도구는 자동 승인. 이미지 첨부 시 프로젝트 내 `.claude-uploads/`에 다운로드 후 Read 도구로 전달. macOS, Linux, Windows(네이티브/WSL) 지원.
+A Discord bot that manages multiple Claude Code sessions from mobile Discord. Each Discord channel maps to an independent Claude Agent SDK session tied to a project directory. Write tools (Edit, Write, Bash) require approval via Discord buttons; read-only tools are auto-approved. File attachments (images, documents, code files) are downloaded to `.claude-uploads/` in the project directory and passed to Claude via Read tool. Dangerous executables (.exe, .bat, etc.) are blocked; 25MB size limit enforced. Supports macOS, Linux, and Windows (native/WSL).
 
-## 명령어
+## Commands
 
 ```bash
-npm run dev          # 개발 실행 (tsx)
-npm run build        # 프로덕션 빌드 (tsup, ESM)
-npm start            # 빌드된 파일 실행
-npm test             # 테스트 실행 (vitest)
-npm run test:watch   # 테스트 watch 모드
-npx tsc --noEmit     # 타입 체크만 수행
-./install.sh         # macOS/Linux 자동 설치 (Node.js, Claude Code, npm)
-install.bat          # Windows 자동 설치
+npm run dev          # Development (tsx)
+npm run build        # Production build (tsup, ESM)
+npm start            # Run built output
+npm test             # Tests (vitest)
+npm run test:watch   # Test watch mode
+npx tsc --noEmit     # Type check only
+./install.sh         # macOS/Linux auto-install (Node.js, Claude Code, npm)
+install.bat          # Windows auto-install
 ```
 
-## 아키텍처
+## Architecture
 
 ```
-[모바일 Discord] ←→ [Discord Bot (discord.js v14)] ←→ [SessionManager] ←→ [Claude Agent SDK]
-                              ↕
+[Mobile Discord] <-> [Discord Bot (discord.js v14)] <-> [SessionManager] <-> [Claude Agent SDK]
+                              |
                         [SQLite (better-sqlite3)]
 ```
 
-**핵심 데이터 흐름:** 등록된 채널에 메시지 전송 → `message.ts` 핸들러에서 인증/레이트리밋 검증 → 이미지 첨부 시 다운로드 후 프롬프트에 경로 추가 → `SessionManager.sendMessage()`가 Agent SDK `query()` 생성/재개 → 스트리밍 응답을 1.5초 간격으로 Discord 메시지 edit → 텍스트 출력 전에는 15초마다 heartbeat로 진행 상황 표시 (도구명, 경과시간, 도구 사용 횟수) → tool use 발생 시 `canUseTool` 콜백이 읽기 전용이면 자동 승인, 아니면 Discord 버튼 embed 전송 → 사용자 승인/거절 → promise resolve → 결과 embed(비용/소요시간) 전송.
+**Core data flow:** Message in registered channel -> `message.ts` handler validates auth/rate-limit -> concurrent session check (rejects if busy) -> file attachments downloaded (images + documents) -> `SessionManager.sendMessage()` creates/resumes Agent SDK `query()` -> streaming response edited into Discord message every 1.5s -> heartbeat every 15s before text output (tool name, elapsed time, tool count) -> Stop button on progress messages for instant cancellation -> `canUseTool` callback auto-approves read-only tools, otherwise sends Discord button embed -> user approve/deny -> promise resolve -> result embed (cost/duration) sent.
 
-### 파일 구조
+### File Structure
 
 ```
 claudecode-discord/
-├── install.sh              # macOS/Linux 자동 설치 스크립트
-├── install.bat             # Windows 자동 설치 스크립트
-├── .env.example            # 환경변수 템플릿
+├── install.sh              # macOS/Linux auto-install script
+├── install.bat             # Windows auto-install script
+├── .env.example            # Environment variable template
 ├── src/
-│   ├── index.ts            # 엔트리포인트
+│   ├── index.ts            # Entry point
 │   ├── bot/
-│   │   ├── client.ts       # Discord 봇 초기화 & 이벤트 라우팅
-│   │   ├── commands/       # 슬래시 명령어 (6개)
+│   │   ├── client.ts       # Discord bot init & event routing
+│   │   ├── commands/       # Slash commands (8)
 │   │   │   ├── register.ts
 │   │   │   ├── unregister.ts
 │   │   │   ├── status.ts
 │   │   │   ├── stop.ts
 │   │   │   ├── auto-approve.ts
-│   │   │   └── sessions.ts
+│   │   │   ├── sessions.ts
+│   │   │   └── clear-sessions.ts
 │   │   └── handlers/
-│   │       ├── message.ts      # 메시지 처리, 이미지 다운로드
-│   │       └── interaction.ts  # 버튼/셀렉트메뉴 처리
+│   │       ├── message.ts      # Message handling, file downloads
+│   │       └── interaction.ts  # Button/select menu handling
 │   ├── claude/
-│   │   ├── session-manager.ts  # 세션 생명주기, 진행 상황 표시
-│   │   └── output-formatter.ts # Discord 출력 포맷
+│   │   ├── session-manager.ts  # Session lifecycle, progress display
+│   │   └── output-formatter.ts # Discord output formatting
 │   ├── db/
-│   │   ├── database.ts     # SQLite 초기화 & 쿼리
+│   │   ├── database.ts     # SQLite init & queries
 │   │   └── types.ts
 │   ├── security/
-│   │   └── guard.ts        # 인증, rate limit, 경로 검증
+│   │   └── guard.ts        # Auth, rate limit, path validation
 │   └── utils/
-│       └── config.ts       # 환경변수 검증 (zod v4)
-├── SETUP.md                # 상세 셋업 가이드
+│       └── config.ts       # Env var validation (zod v4)
+├── SETUP.md / SETUP.kr.md  # Detailed setup guide (EN/KR)
+├── README.md / README.kr.md
 ├── package.json
 └── tsconfig.json
 ```
 
-### 주요 모듈
+### Key Modules
 
-- **`src/bot/client.ts`** — Discord.js 클라이언트 초기화, 이벤트 라우팅, 길드별 슬래시 커맨드 등록
-- **`src/bot/commands/`** — 슬래시 커맨드 6개: register, unregister, status, stop, auto-approve, sessions
-- **`src/bot/handlers/message.ts`** — 채널 메시지를 보안 검증 후 SessionManager로 전달. Discord 이미지 첨부 감지 시 `.claude-uploads/`에 다운로드하여 프롬프트에 파일 경로 추가
-- **`src/bot/handlers/interaction.ts`** — 버튼 인터랙션(approve/deny/approve-all) 및 StringSelectMenu(세션 선택) 처리
-- **`src/claude/session-manager.ts`** — 채널별 활성 세션을 관리하는 싱글톤. Agent SDK의 `query()`와 `canUseTool` 콜백으로 승인 워크플로우 구현. requestId 기반 Map으로 pending approval 관리 (5분 타임아웃). SDK session ID로 세션 재개 지원. 봇 재시작 시 DB에서 session_id 로드하여 자동 재개. 텍스트 출력 전 heartbeat(15초 간격)로 진행 상황 표시
-- **`src/bot/commands/sessions.ts`** — `~/.claude/projects/`의 JSONL 세션 파일을 스캔하여 기존 세션 목록 표시. Discord StringSelectMenu로 세션 선택 후 재개
-- **`src/claude/output-formatter.ts`** — Discord 2000자 제한에 맞춘 메시지 분할, tool 승인 요청 및 결과 embed 생성
-- **`src/db/database.ts`** — SQLite WAL 모드. data.db 자동 생성. 테이블 2개: `projects`(채널→프로젝트 경로 매핑, auto_approve 플래그), `sessions`(세션 상태 추적, SDK session_id 저장)
-- **`src/security/guard.ts`** — 유저 화이트리스트(ALLOWED_USER_IDS), 인메모리 슬라이딩 윈도우 레이트리밋, 경로 순회(`..`) 차단
-- **`src/utils/config.ts`** — Zod v4 스키마로 환경변수 검증, 싱글톤 패턴
+- **`src/bot/client.ts`** — Discord.js client init, event routing, guild-scoped slash command registration
+- **`src/bot/commands/`** — 8 slash commands: register, unregister, status, stop, auto-approve, sessions, clear-sessions
+- **`src/bot/handlers/message.ts`** — Routes channel messages to SessionManager after security checks. Downloads image and document attachments to `.claude-uploads/`. Rejects concurrent messages when a session is active. Blocks dangerous file types (.exe, .bat, etc.) and enforces 25MB size limit
+- **`src/bot/handlers/interaction.ts`** — Handles button interactions (approve/deny/approve-all/stop/session-resume/session-delete/session-cancel) and StringSelectMenu (session selection with Resume/Delete/Cancel buttons)
+- **`src/claude/session-manager.ts`** — Singleton managing per-channel active sessions. Implements approval workflow via Agent SDK `query()` and `canUseTool` callback. requestId-based Map for pending approvals (5min timeout). Session resume via SDK session ID. Auto-resumes from DB session_id on bot restart. Heartbeat (15s interval) shows progress before text output. Stop button on progress messages for instant cancellation. Cleans up active session in finally block
+- **`src/bot/commands/sessions.ts`** — Scans `~/.claude/projects/` JSONL session files to list existing sessions. Filters out empty sessions (<512 bytes, no user message). Strips IDE-injected tags from session labels. Discord StringSelectMenu for session selection
+- **`src/bot/commands/clear-sessions.ts`** — Bulk deletes all JSONL session files for the registered project
+- **`src/claude/output-formatter.ts`** — Message splitting at Discord 2000-char limit with markdown code block fence preservation. Tool approval request and result embed generation. Stop button factory
+- **`src/db/database.ts`** — SQLite WAL mode. data.db auto-created. 2 tables: `projects` (channel->project path mapping, auto_approve flag), `sessions` (session state tracking, SDK session_id storage)
+- **`src/security/guard.ts`** — User whitelist (ALLOWED_USER_IDS), in-memory sliding window rate limit, path traversal (`..`) blocking
+- **`src/utils/config.ts`** — Zod v4 schema for env var validation, singleton pattern
 
-### Tool 승인 로직 (`canUseTool`)
+### Tool Approval Logic (`canUseTool`)
 
-1. 읽기 전용 도구 (Read, Glob, Grep, WebSearch, WebFetch, TodoWrite) → 항상 자동 승인
-2. 채널의 `auto_approve`가 활성화된 경우 → 자동 승인
-3. 그 외 → Discord 버튼 embed 전송, 사용자 응답 대기 (5분 타임아웃, 미응답 시 거부)
+1. Read-only tools (Read, Glob, Grep, WebSearch, WebFetch, TodoWrite) -> always auto-approved
+2. Channel `auto_approve` enabled -> auto-approved
+3. Otherwise -> Discord button embed sent, awaits user response (5min timeout, denied if no response)
 
-### 세션 상태
+### Session States
 
-- **🟢 online** — Claude가 작업 중
-- **🟡 waiting** — tool use 승인 대기
-- **⚪ idle** — 작업 완료, 다음 입력 대기
-- **🔴 offline** — 세션 없음
+- **🟢 online** — Claude is actively working
+- **🟡 waiting** — Awaiting tool use approval
+- **⚪ idle** — Task complete, awaiting next input
+- **🔴 offline** — No session
 
-### 멀티 PC 지원
+### Multi-PC Support
 
-PC별로 별도 Discord 봇을 생성하여 같은 길드에 초대. 각 봇은 서로 다른 채널에 프로젝트를 등록하여 독립 운영.
+Create a separate Discord bot per PC, invite all to the same guild. Each bot registers projects to different channels for independent operation.
 
-## TypeScript 컨벤션
+## TypeScript Conventions
 
-- ESM 모듈 (`"type": "module"`), 로컬 import에 `.js` 확장자 사용
-- strict 모드, `noUnusedLocals`와 `noUnusedParameters` 활성화
+- ESM modules (`"type": "module"`), `.js` extension for local imports
+- strict mode, `noUnusedLocals` and `noUnusedParameters` enabled
 - Target: ES2022, moduleResolution: bundler
-- Zod v4 사용 (v3과 API 다름에 주의)
-- 경로 처리 시 `path.join()`, `path.resolve()` 사용 (Windows 호환)
-- 파일명 추출 시 `split(/[\\/]/)` 사용 (macOS/Windows 경로 구분자 모두 지원)
+- Zod v4 (API differs from v3)
+- Use `path.join()`, `path.resolve()` for path handling (Windows compat)
+- Use `split(/[\\/]/)` for filename extraction (macOS/Windows path separator support)
 
-## 환경 설정
+## Environment Setup
 
-`.env.example`을 `.env`로 복사 후 값 설정. 필수: `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `ALLOWED_USER_IDS`, `BASE_PROJECT_DIR`. 선택: `RATE_LIMIT_PER_MINUTE` (기본값 10). data.db는 첫 실행 시 자동 생성.
+Copy `.env.example` to `.env` and fill in values. Required: `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `ALLOWED_USER_IDS`, `BASE_PROJECT_DIR`. Optional: `RATE_LIMIT_PER_MINUTE` (default 10). data.db is auto-created on first run.

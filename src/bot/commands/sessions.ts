@@ -23,7 +23,7 @@ interface SessionInfo {
  * The encoding isn't just simple "/" -> "-" replacement (also replaces "_" etc.)
  * So we find the correct directory by checking JSONL file contents.
  */
-function findSessionDir(projectPath: string): string | null {
+export function findSessionDir(projectPath: string): string | null {
   const claudeDir = path.join(os.homedir(), ".claude", "projects");
   if (!fs.existsSync(claudeDir)) return null;
 
@@ -77,20 +77,26 @@ async function getFirstUserMessage(filePath: string): Promise<{ text: string; ti
         timestamp = entry.timestamp;
       }
 
-      // Find first user message with text content
+      // Find first user message with real text content (skip IDE-injected tags)
       if (entry.type === "user" && entry.message?.content) {
         const content = entry.message.content;
+        let raw = "";
         if (Array.isArray(content)) {
           for (const block of content) {
             if (block.type === "text" && block.text) {
-              text = block.text;
+              raw = block.text;
               break;
             }
           }
         } else if (typeof content === "string") {
-          text = content;
+          raw = content;
         }
-        if (text) break;
+        // Strip system/IDE tags like <ide_opened_file>...</ide_opened_file>, <system-reminder>...
+        const cleaned = raw.replace(/<[^>]+>[^<]*<\/[^>]+>/g, "").replace(/<[^>]+>/g, "").trim();
+        if (cleaned) {
+          text = cleaned;
+          break;
+        }
       }
     } catch {
       // skip malformed lines
@@ -116,9 +122,15 @@ async function listSessions(projectPath: string): Promise<SessionInfo[]> {
   for (const file of files) {
     const filePath = path.join(sessionDir, file);
     const stat = fs.statSync(filePath);
-    const sessionId = file.replace(".jsonl", "");
 
+    // Skip very small files (likely empty/abandoned sessions)
+    if (stat.size < 512) continue;
+
+    const sessionId = file.replace(".jsonl", "");
     const { text, timestamp } = await getFirstUserMessage(filePath);
+
+    // Skip sessions with no actual user message
+    if (text === "(empty session)") continue;
 
     sessions.push({
       sessionId,
@@ -195,7 +207,7 @@ export async function execute(
           `Project: \`${project.project_path}\``,
           `Found **${sessions.length}** session(s)`,
           "",
-          "Select a session below to resume it. Your next message will continue that conversation.",
+          "Select a session below to resume or delete it.",
         ].join("\n"),
         color: 0x7c3aed,
       },

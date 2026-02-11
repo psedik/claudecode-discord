@@ -1,134 +1,149 @@
 # Claude Code Discord Controller
 
-모바일 Discord에서 여러 프로젝트의 Claude Code 세션을 관리하는 봇입니다.
+A Discord bot that manages multiple Claude Code sessions from mobile Discord.
 
-채널별로 독립적인 Claude Code 세션을 실행하고, tool use 승인/거절을 Discord 버튼으로 제어할 수 있습니다.
+Run independent Claude Code sessions per channel, with tool use approval/denial via Discord buttons.
 
-## 주요 기능
+> **[Korean documentation (한국어)](README.kr.md)**
 
-- 📱 모바일 Discord에서 Claude Code 원격 제어
-- 🔀 채널별 독립 세션 (프로젝트 디렉토리 매핑)
-- ✅ tool use 승인/거절 Discord 버튼 UI
-- 🔄 세션 재개 지원 (봇 재시작 후에도 이전 세션 이어가기)
-- ⏱️ 실시간 진행 상황 표시 (도구 사용 현황, 경과 시간)
-- 🔒 유저 화이트리스트, 레이트리밋, 경로 보안
+## Features
 
-## 기술 스택
+- 📱 Remote control Claude Code from mobile Discord
+- 🔀 Independent sessions per channel (project directory mapping)
+- ✅ Tool use approve/deny via Discord button UI
+- ⏹️ Stop button for instant cancellation during progress
+- 📎 File attachments support (images, documents, code files)
+- 🔄 Session resume/delete (persist across bot restarts)
+- ⏱️ Real-time progress display (tool usage, elapsed time)
+- 🔒 User whitelist, rate limiting, path security
 
-| 분류 | 기술 |
-|------|------|
+## Tech Stack
+
+| Category | Technology |
+|----------|------------|
 | Runtime | Node.js 20+, TypeScript |
 | Discord | discord.js v14 |
 | AI | @anthropic-ai/claude-agent-sdk |
 | DB | better-sqlite3 (SQLite) |
-| 검증 | zod v4 |
-| 빌드 | tsup (ESM) |
-| 테스트 | vitest |
+| Validation | zod v4 |
+| Build | tsup (ESM) |
+| Test | vitest |
 
-## 설치
+## Installation
 
 ```bash
 git clone git@github.com:chadingTV/claudecode-discord.git
 cd claudecode-discord
 
-# 자동 설치 (Node.js, Claude Code CLI, npm 패키지 일괄 설치)
+# Auto install (Node.js, Claude Code CLI, npm packages)
 ./install.sh        # macOS / Linux
 install.bat         # Windows
 
-# 또는 수동 설치
+# Or manual install
 npm install
 cp .env.example .env
 npm run dev
 ```
 
-Discord 봇 생성, 환경변수 상세 설정, Windows 환경 안내, Claude Code 설치 방법 등
-전체 셋업 과정은 **[SETUP.md](SETUP.md)** 를 참고하세요.
+For Discord bot creation, environment variables, Windows setup, and Claude Code installation,
+see the full setup guide at **[SETUP.md](SETUP.md)**.
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 claudecode-discord/
-├── install.sh              # macOS/Linux 자동 설치 스크립트
-├── install.bat             # Windows 자동 설치 스크립트
-├── .env.example            # 환경변수 템플릿
+├── install.sh              # macOS/Linux auto-installer
+├── install.bat             # Windows auto-installer
+├── .env.example            # Environment variable template
 ├── src/
-│   ├── index.ts            # 엔트리포인트
+│   ├── index.ts            # Entry point
 │   ├── bot/
-│   │   ├── client.ts       # Discord 봇 초기화 & 이벤트
-│   │   ├── commands/       # 슬래시 명령어
+│   │   ├── client.ts       # Discord bot init & events
+│   │   ├── commands/       # Slash commands
 │   │   │   ├── register.ts
 │   │   │   ├── unregister.ts
 │   │   │   ├── status.ts
 │   │   │   ├── stop.ts
 │   │   │   ├── auto-approve.ts
-│   │   │   └── sessions.ts
-│   │   └── handlers/       # 이벤트 핸들러
+│   │   │   ├── sessions.ts
+│   │   │   └── clear-sessions.ts
+│   │   └── handlers/       # Event handlers
 │   │       ├── message.ts
 │   │       └── interaction.ts
 │   ├── claude/
-│   │   ├── session-manager.ts   # 세션 생명주기 관리
-│   │   └── output-formatter.ts  # Discord 출력 포맷
+│   │   ├── session-manager.ts   # Session lifecycle
+│   │   └── output-formatter.ts  # Discord output formatting
 │   ├── db/
-│   │   ├── database.ts     # SQLite 초기화 & 쿼리
+│   │   ├── database.ts     # SQLite init & queries
 │   │   └── types.ts
 │   ├── security/
-│   │   └── guard.ts        # 인증, rate limit
+│   │   └── guard.ts        # Auth, rate limit
 │   └── utils/
-│       └── config.ts       # 환경변수 검증 (zod)
-├── SETUP.md                # 상세 셋업 가이드
+│       └── config.ts       # Env var validation (zod)
+├── SETUP.md                # Detailed setup guide
 ├── package.json
 └── tsconfig.json
 ```
 
-## 사용법
+## Usage
 
-| 명령어 | 설명 | 예시 |
-|--------|------|------|
-| `/register <폴더명>` | 현재 채널에 프로젝트 연결 | `/register my-project` |
-| `/unregister` | 채널 등록 해제 | |
-| `/status` | 전체 세션 상태 확인 | |
-| `/stop` | 현재 채널 세션 중지 | |
-| `/auto-approve on\|off` | 자동 승인 토글 | `/auto-approve on` |
-| `/sessions` | 기존 세션 목록 조회 및 재개 | |
+| Command | Description | Example |
+|---------|-------------|---------|
+| `/register <folder>` | Link current channel to a project | `/register my-project` |
+| `/unregister` | Unlink channel | |
+| `/status` | Check all session statuses | |
+| `/stop` | Stop current channel's session | |
+| `/auto-approve on\|off` | Toggle auto-approval | `/auto-approve on` |
+| `/sessions` | List sessions to resume or delete | |
+| `/clear-sessions` | Delete all session files for the project | |
 
-등록된 채널에 **일반 메시지**를 보내면 Claude가 응답합니다.
+Send a **regular message** in a registered channel and Claude will respond.
+Attach images, documents, or code files and Claude can read and analyze them.
 
-## 아키텍처
+### In-Progress Controls
+
+- **⏹️ Stop** button on progress messages for instant cancellation
+- Sending a new message while busy shows "previous task in progress" notice
+- `/stop` slash command also available
+
+## Architecture
 
 ```
-[모바일 Discord] ←→ [Discord Bot] ←→ [Session Manager] ←→ [Claude Agent SDK]
+[Mobile Discord] ←→ [Discord Bot] ←→ [Session Manager] ←→ [Claude Agent SDK]
                           ↕
                      [SQLite DB]
 ```
 
-- 채널별 독립 세션 (프로젝트 디렉토리 매핑)
-- Claude Agent SDK가 Claude Code를 subprocess로 실행 (기존 인증 공유)
-- tool use 승인은 Discord 버튼으로 처리 (자동승인 모드 지원)
-- 스트리밍 응답을 1.5초 간격으로 Discord 메시지 edit
-- 텍스트 출력 전까지 15초마다 heartbeat로 진행 상황 표시
+- Independent sessions per channel (project directory mapping)
+- Claude Agent SDK runs Claude Code as subprocess (shares existing auth)
+- Tool use approval via Discord buttons (auto-approve mode supported)
+- Streaming responses edited every 1.5s into Discord messages
+- Heartbeat progress display every 15s until text output begins
+- Markdown code blocks preserved across message splits
 
-## 세션 상태
+## Session States
 
-| 상태 | 의미 |
-|------|------|
-| 🟢 online | Claude가 작업 중 |
-| 🟡 waiting | tool use 승인 대기 |
-| ⚪ idle | 작업 완료, 다음 입력 대기 |
-| 🔴 offline | 세션 없음 |
+| State | Meaning |
+|-------|---------|
+| 🟢 online | Claude is working |
+| 🟡 waiting | Waiting for tool use approval |
+| ⚪ idle | Task complete, waiting for input |
+| 🔴 offline | No session |
 
-## 보안
+## Security
 
-- `ALLOWED_USER_IDS` 화이트리스트 기반 인증
-- 분당 요청 수 제한 (rate limit)
-- 프로젝트 경로 `..` 순회 차단
-- tool use 기본값: 매번 사용자 승인 요청
+- `ALLOWED_USER_IDS` whitelist-based authentication
+- Per-minute request rate limiting
+- Path traversal (`..`) blocked
+- Tool use default: requires user approval each time
+- File attachments: executable files (.exe, .bat, etc.) blocked, 25MB size limit
 
-## 개발 명령어
+## Development
 
 ```bash
-npm run dev          # 개발 실행 (tsx)
-npm run build        # 프로덕션 빌드 (tsup)
-npm start            # 빌드된 파일 실행
-npm test             # 테스트 (vitest)
-npm run test:watch   # 테스트 watch 모드
+npm run dev          # Dev mode (tsx)
+npm run build        # Production build (tsup)
+npm start            # Run built files
+npm test             # Tests (vitest)
+npm run test:watch   # Test watch mode
 ```
