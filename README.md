@@ -147,3 +147,7 @@ npm start            # Run built files
 npm test             # Tests (vitest)
 npm run test:watch   # Test watch mode
 ```
+
+## License
+
+[MIT License](LICENSE) - Free to use, modify, and distribute commercially. Attribution required: include the original copyright notice and link to [this repository](https://github.com/chadingTV/claudecode-discord).
