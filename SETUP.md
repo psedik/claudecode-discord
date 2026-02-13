@@ -135,6 +135,9 @@ git config --global user.email "your@email.com"
 - Windows filesystem (`/mnt/c/...`) is accessible but slower; use WSL internal paths
 - For VSCode, install **Remote - WSL** extension, then run `code .` from WSL
 
+> **⚠️ Session sharing note:** If you use VSCode natively on Windows (most users do), you must run the bot on **Windows Native** (Option A) as well.
+> Running the bot in WSL gives project paths like `/home/...`, which won't match VSCode's `C:\Users\...` paths — so Claude Code sessions from VSCode cannot be resumed from Discord.
+
 > All subsequent steps in WSL are identical to macOS.
 
 ---

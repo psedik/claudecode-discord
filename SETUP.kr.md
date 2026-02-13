@@ -133,6 +133,9 @@ git config --global user.email "your@email.com"
 - Windows 파일시스템(`/mnt/c/...`)도 접근 가능하지만 성능이 떨어지므로, WSL 내부 경로 사용을 권장합니다
 - VSCode 사용 시 **Remote - WSL** 확장 설치 후 WSL 안에서 `code .`으로 열 수 있습니다
 
+> **⚠️ 세션 공유 주의:** VSCode를 Windows 네이티브로 사용하는 경우(대부분의 경우), 봇도 **Windows 네이티브**(방법 A)로 실행해야 합니다.
+> WSL에서 봇을 실행하면 프로젝트 경로가 `/home/...`이 되어 VSCode의 `C:\Users\...` 경로와 달라지므로, VSCode에서 만든 Claude Code 세션을 Discord에서 이어갈 수 없습니다.
+
 > 이후 모든 단계는 WSL 터미널(Ubuntu) 안에서 진행하면 macOS와 동일합니다.
 
 ---
