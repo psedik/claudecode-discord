@@ -132,55 +132,79 @@ def edit_settings(icon, item):
 
 
 def _edit_settings_tk():
-    """Edit settings using tkinter GUI with pre-filled values"""
+    """Edit settings using tkinter GUI with pre-filled values and dark theme"""
     import tkinter as tk
     from tkinter import filedialog, messagebox
 
     env = _load_env()
     fields = [
-        ("DISCORD_BOT_TOKEN", "Discord Bot Token:"),
-        ("DISCORD_GUILD_ID", "Discord Guild ID:"),
-        ("ALLOWED_USER_IDS", "Allowed User IDs (comma-separated):"),
-        ("BASE_PROJECT_DIR", "Base Project Directory:"),
-        ("RATE_LIMIT_PER_MINUTE", "Rate Limit Per Minute:"),
-        ("SHOW_COST", "Show Cost (true/false):"),
+        ("DISCORD_BOT_TOKEN", "Discord Bot Token"),
+        ("DISCORD_GUILD_ID", "Discord Guild ID"),
+        ("ALLOWED_USER_IDS", "Allowed User IDs (comma-separated)"),
+        ("BASE_PROJECT_DIR", "Base Project Directory"),
+        ("RATE_LIMIT_PER_MINUTE", "Rate Limit Per Minute"),
+        ("SHOW_COST", "Show Cost (true/false)"),
     ]
     defaults = {"RATE_LIMIT_PER_MINUTE": "10", "SHOW_COST": "true", "BASE_PROJECT_DIR": BOT_DIR}
 
+    # Dark theme colors
+    BG = "#2b2b2b"
+    FG = "#e0e0e0"
+    ENTRY_BG = "#3c3c3c"
+    ENTRY_FG = "#ffffff"
+    ACCENT = "#5b9bd5"
+    BTN_BG = "#404040"
+    BTN_SAVE_BG = "#5b9bd5"
+    LABEL_FG = "#b0b0b0"
+
     root = tk.Tk()
     root.title("Claude Discord Bot Settings")
-    root.geometry("500x420")
+    root.geometry("520x480")
     root.resizable(False, False)
+    root.configure(bg=BG)
+
+    # Title
+    title_frame = tk.Frame(root, bg=BG)
+    title_frame.pack(fill="x", padx=20, pady=(15, 0))
+    tk.Label(title_frame, text="Claude Discord Bot", font=("", 14, "bold"), bg=BG, fg=FG).pack(anchor="w")
+    tk.Label(title_frame, text="Settings", font=("", 11), bg=BG, fg=LABEL_FG).pack(anchor="w")
 
     # Setup guide link
-    link = tk.Label(root, text="📖 Open Setup Guide", fg="dodgerblue", cursor="hand2", font=("", 10, "underline"))
-    link.pack(anchor="w", padx=15, pady=(10, 5))
+    link = tk.Label(title_frame, text="📖 Open Setup Guide", fg=ACCENT, bg=BG, cursor="hand2", font=("", 9, "underline"))
+    link.pack(anchor="w", pady=(4, 0))
     link.bind("<Button-1>", lambda e: subprocess.Popen(["xdg-open", "https://github.com/chadingTV/claudecode-discord/blob/main/SETUP.md"]))
+
+    # Separator
+    tk.Frame(root, height=1, bg="#444444").pack(fill="x", padx=20, pady=(10, 5))
 
     entries = {}
     for key, label_text in fields:
-        frame = tk.Frame(root)
-        frame.pack(fill="x", padx=15, pady=2)
+        frame = tk.Frame(root, bg=BG)
+        frame.pack(fill="x", padx=20, pady=3)
 
-        lbl = tk.Label(frame, text=label_text, font=("", 9, "bold"), anchor="w")
+        lbl = tk.Label(frame, text=label_text, font=("", 9, "bold"), anchor="w", bg=BG, fg=LABEL_FG)
         lbl.pack(fill="x")
 
-        entry_frame = tk.Frame(frame)
-        entry_frame.pack(fill="x")
+        entry_frame = tk.Frame(frame, bg=BG)
+        entry_frame.pack(fill="x", pady=(1, 0))
 
-        entry = tk.Entry(entry_frame, font=("", 10))
+        entry = tk.Entry(entry_frame, font=("", 10), bg=ENTRY_BG, fg=ENTRY_FG,
+                         insertbackground=ENTRY_FG, relief="flat", highlightthickness=1,
+                         highlightcolor=ACCENT, highlightbackground="#555555")
 
         if key == "BASE_PROJECT_DIR":
-            entry.pack(side="left", fill="x", expand=True)
+            entry.pack(side="left", fill="x", expand=True, ipady=3)
             def browse_folder(e=entry):
                 path = filedialog.askdirectory(title="Select Base Project Directory")
                 if path:
                     e.delete(0, tk.END)
                     e.insert(0, path)
-            btn = tk.Button(entry_frame, text="Browse...", command=browse_folder)
-            btn.pack(side="right", padx=(4, 0))
+            btn = tk.Button(entry_frame, text="Browse...", command=browse_folder,
+                            bg=BTN_BG, fg=FG, relief="flat", padx=8, cursor="hand2",
+                            activebackground="#505050", activeforeground=FG)
+            btn.pack(side="right", padx=(6, 0), ipady=1)
         else:
-            entry.pack(fill="x")
+            entry.pack(fill="x", ipady=3)
 
         # Pre-fill with current value
         current = env.get(key, "")
@@ -196,8 +220,9 @@ def _edit_settings_tk():
 
         entries[key] = entry
 
-    note = tk.Label(root, text="* Max plan users should set Show Cost to false", fg="gray", font=("", 8))
-    note.pack(anchor="w", padx=15, pady=(5, 0))
+    note = tk.Label(root, text="* Max plan users should set Show Cost to false",
+                    fg="#777777", bg=BG, font=("", 8))
+    note.pack(anchor="w", padx=20, pady=(6, 0))
 
     def save():
         new_env = {}
@@ -222,10 +247,17 @@ def _edit_settings_tk():
 
         root.destroy()
 
-    btn_frame = tk.Frame(root)
-    btn_frame.pack(pady=10)
-    tk.Button(btn_frame, text="Cancel", width=10, command=root.destroy).pack(side="left", padx=5)
-    tk.Button(btn_frame, text="Save", width=10, command=save).pack(side="left", padx=5)
+    # Separator
+    tk.Frame(root, height=1, bg="#444444").pack(fill="x", padx=20, pady=(10, 0))
+
+    btn_frame = tk.Frame(root, bg=BG)
+    btn_frame.pack(pady=12)
+    tk.Button(btn_frame, text="Cancel", width=12, command=root.destroy,
+              bg=BTN_BG, fg=FG, relief="flat", padx=10, pady=4, cursor="hand2",
+              activebackground="#505050", activeforeground=FG).pack(side="left", padx=8)
+    tk.Button(btn_frame, text="Save", width=12, command=save,
+              bg=BTN_SAVE_BG, fg="#ffffff", relief="flat", padx=10, pady=4, cursor="hand2",
+              activebackground="#4a8bc4", activeforeground="#ffffff").pack(side="left", padx=8)
 
     root.mainloop()
 
