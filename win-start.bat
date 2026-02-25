@@ -135,7 +135,7 @@ if "%~1"=="--fg" (
         call npm run build
     )
 
-    echo [claude-bot] 봇 시작 (포그라운드)...
+    echo [claude-bot] 봇 시작 ^(포그라운드^)...
     node dist/index.js
     exit /b 0
 )
@@ -178,7 +178,7 @@ if not exist "dist" (
 schtasks /create /tn "%TASK_NAME%" /tr "\"%SCRIPT_DIR%\win-start.bat\" --fg" /sc onlogon /rl highest /f >nul 2>&1
 
 :: 봇 백그라운드 실행
-start "ClaudeDiscordBot" /min cmd /c "cd /d "%SCRIPT_DIR%" && node dist/index.js"
+start "ClaudeDiscordBot" /min cmd /c "cd /d %SCRIPT_DIR% && node dist/index.js"
 
 :: 트레이 앱 컴파일 (exe 없으면)
 if not exist "%TRAY_EXE%" (
@@ -200,7 +200,7 @@ if not exist "%TRAY_EXE%" (
 if exist "%TRAY_EXE%" (
     taskkill /im ClaudeBotTray.exe /f >nul 2>&1
     start "" "%TRAY_EXE%"
-    echo 🟢 봇이 백그라운드에서 시작되었습니다 (트레이 표시)
+    echo 🟢 봇이 백그라운드에서 시작되었습니다 ^(트레이 표시^)
 ) else (
     echo 🟢 봇이 백그라운드에서 시작되었습니다
 )
