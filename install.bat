@@ -25,12 +25,19 @@ if %errorlevel% neq 0 (
     set "NODE_MSI=%TEMP%\node-install.msi"
     powershell -Command "Invoke-WebRequest -Uri 'https://nodejs.org/dist/v22.14.0/node-v22.14.0-x64.msi' -OutFile '!NODE_MSI!'" 2>nul
     if exist "!NODE_MSI!" (
-        echo   Installing Node.js...
-        msiexec /i "!NODE_MSI!" /qn
+        echo   Installing Node.js (this may take a moment^)...
+        msiexec /i "!NODE_MSI!" /passive /norestart
         del "!NODE_MSI!" >nul 2>&1
-        echo   ! Node.js installed. Please restart this script in a new terminal.
-        pause
-        exit /b 0
+        :: Add Node.js to current session PATH
+        set "PATH=%PATH%;C:\Program Files\nodejs"
+        where node >nul 2>&1
+        if !errorlevel! equ 0 (
+            echo   OK Node.js installed successfully
+        ) else (
+            echo   ! Node.js installed. Please restart this script in a new terminal.
+            pause
+            exit /b 0
+        )
     ) else (
         echo   X Download failed.
         echo   Download Node.js manually from https://nodejs.org
@@ -56,12 +63,11 @@ if %NODE_MAJOR% lss 20 (
     set "NODE_MSI=%TEMP%\node-install.msi"
     powershell -Command "Invoke-WebRequest -Uri 'https://nodejs.org/dist/v22.14.0/node-v22.14.0-x64.msi' -OutFile '!NODE_MSI!'" 2>nul
     if exist "!NODE_MSI!" (
-        echo   Installing Node.js...
-        msiexec /i "!NODE_MSI!" /qn
+        echo   Upgrading Node.js (this may take a moment^)...
+        msiexec /i "!NODE_MSI!" /passive /norestart
         del "!NODE_MSI!" >nul 2>&1
-        echo   ! Updated. Please restart this script in a new terminal.
-        pause
-        exit /b 0
+        set "PATH=%PATH%;C:\Program Files\nodejs"
+        echo   OK Node.js upgraded
     ) else (
         echo   X Download failed. Download from https://nodejs.org
         pause
