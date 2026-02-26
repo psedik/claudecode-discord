@@ -186,6 +186,10 @@ def open_github(icon, item):
     webbrowser.open("https://github.com/chadingTV/claudecode-discord")
 
 
+def open_github_issues(icon, item):
+    webbrowser.open("https://github.com/chadingTV/claudecode-discord/issues")
+
+
 def edit_settings(icon, item):
     """Open settings dialog using GTK3 (native look) or fallback"""
     try:
@@ -261,6 +265,13 @@ def _edit_settings_gtk(icon=None):
     )
     link.set_halign(Gtk.Align.START)
     content.pack_start(link, False, False, 0)
+
+    issue_link = Gtk.LinkButton.new_with_label(
+        "https://github.com/chadingTV/claudecode-discord/issues",
+        L("Bug Report / Feature Request (GitHub Issues)", "버그 신고 / 기능 요청 (GitHub Issues)")
+    )
+    issue_link.set_halign(Gtk.Align.START)
+    content.pack_start(issue_link, False, False, 0)
 
     content.pack_start(Gtk.Separator(), False, False, 4)
 
@@ -437,6 +448,7 @@ def create_menu():
 
     # GitHub link
     github_item = pystray.MenuItem("GitHub: chadingTV/claudecode-discord", open_github)
+    issues_item = pystray.MenuItem(L("Bug Report / Feature Request", "버그 신고 / 기능 요청"), open_github_issues)
 
     if not has_env:
         return pystray.Menu(
@@ -450,6 +462,7 @@ def create_menu():
             update_item,
             pystray.Menu.SEPARATOR,
             github_item,
+            issues_item,
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(L("Quit", "종료"), quit_all),
         )
@@ -471,6 +484,7 @@ def create_menu():
             update_item,
             pystray.Menu.SEPARATOR,
             github_item,
+            issues_item,
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(L("Quit", "종료"), quit_all),
         )
@@ -490,6 +504,7 @@ def create_menu():
             update_item,
             pystray.Menu.SEPARATOR,
             github_item,
+            issues_item,
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(L("Quit", "종료"), quit_all),
         )

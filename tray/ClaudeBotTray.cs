@@ -533,6 +533,11 @@ class ClaudeBotTray : Form
         linkLabel.LinkClicked += (s, ev) => { Process.Start("https://github.com/chadingTV/claudecode-discord/blob/main/SETUP.md"); };
         form.Controls.Add(linkLabel);
 
+        // Issues link
+        var issueLabel = new LinkLabel() { Text = L("Bug Report / Feature Request (GitHub Issues)", "버그 신고 / 기능 요청 (GitHub Issues)"), Left = 15, Top = 28, Width = 450 };
+        issueLabel.LinkClicked += (s, ev) => { Process.Start("https://github.com/chadingTV/claudecode-discord/issues"); };
+        form.Controls.Add(issueLabel);
+
         string[][] fields = new string[][] {
             new string[] { "DISCORD_BOT_TOKEN", "Discord Bot Token" },
             new string[] { "DISCORD_GUILD_ID", "Discord Guild ID (Server ID)" },
@@ -935,6 +940,19 @@ class ClaudeBotTray : Form
         };
         ghLink.LinkClicked += (s, ev) => { Process.Start("https://github.com/chadingTV/claudecode-discord"); };
         controlPanel.Controls.Add(ghLink);
+        y += 22;
+
+        // Issues link
+        var issueLink = new LinkLabel()
+        {
+            Text = L("Bug Report / Feature Request (GitHub Issues)", "버그 신고 / 기능 요청 (GitHub Issues)"),
+            Left = 25, Top = y, Width = btnWidth, Height = 20,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Font = new Font(FontFamily.GenericSansSerif, 8.5f),
+            LinkColor = Color.FromArgb(66, 133, 244)
+        };
+        issueLink.LinkClicked += (s, ev) => { Process.Start("https://github.com/chadingTV/claudecode-discord/issues"); };
+        controlPanel.Controls.Add(issueLink);
         y += 22;
 
         // Star request

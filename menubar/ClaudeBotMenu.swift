@@ -581,6 +581,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ghButton.action = #selector(openGitHub)
         elements.append((ghButton, 22))
 
+        // Issues link
+        let issueButton = NSButton(frame: NSRect(x: 0, y: 0, width: contentWidth, height: 20))
+        issueButton.title = L("Bug Report / Feature Request (GitHub Issues)", "버그 신고 / 기능 요청 (GitHub Issues)")
+        issueButton.bezelStyle = .inline
+        issueButton.isBordered = false
+        issueButton.font = NSFont.systemFont(ofSize: 11)
+        issueButton.contentTintColor = .linkColor
+        issueButton.alignment = .center
+        issueButton.target = self
+        issueButton.action = #selector(openGitHubIssues)
+        elements.append((issueButton, 22))
+
         // Star request
         let starLabel = NSTextField(labelWithString: L(
             "If you find this useful, please give it a Star on GitHub!",
@@ -686,6 +698,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSWorkspace.shared.open(URL(string: "https://github.com/chadingTV/claudecode-discord")!)
     }
 
+    @objc private func openGitHubIssues() {
+        NSWorkspace.shared.open(URL(string: "https://github.com/chadingTV/claudecode-discord/issues")!)
+    }
+
     // MARK: - Settings Window
 
     private func loadEnv() -> [String: String] {
@@ -742,7 +758,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let linkHeight: CGFloat = 20
         let noteHeight: CGFloat = 18
         let radioRowHeight: CGFloat = labelHeight + fieldHeight + spacing
-        let totalHeight = linkHeight + spacing + CGFloat(fields.count) * (labelHeight + fieldHeight + spacing) + radioRowHeight + noteHeight + 4
+        let totalHeight = (linkHeight + spacing) * 2 + CGFloat(fields.count) * (labelHeight + fieldHeight + spacing) + radioRowHeight + noteHeight + 4
         let accessory = NSView(frame: NSRect(x: 0, y: 0, width: width, height: totalHeight))
 
         var textFields: [String: NSTextField] = [:]
@@ -759,6 +775,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         linkButton.target = self
         linkButton.action = #selector(openSetupGuide)
         accessory.addSubview(linkButton)
+
+        y -= linkHeight
+        let issueLink = NSButton(frame: NSRect(x: 0, y: y, width: width, height: linkHeight))
+        issueLink.title = L("Bug Report / Feature Request (GitHub Issues)", "버그 신고 / 기능 요청 (GitHub Issues)")
+        issueLink.bezelStyle = .inline
+        issueLink.isBordered = false
+        issueLink.font = NSFont.systemFont(ofSize: 12)
+        issueLink.contentTintColor = .linkColor
+        issueLink.target = self
+        issueLink.action = #selector(openGitHubIssues)
+        accessory.addSubview(issueLink)
         y -= spacing
 
         for field in fields {
