@@ -254,25 +254,16 @@ export function createResultEmbed(
   durationMs: number,
   showCost: boolean = true,
 ): EmbedBuilder {
+  const duration = `${(durationMs / 1000).toFixed(1)}s`;
+  const footer = showCost
+    ? `Cost (est.) : $${costUsd.toFixed(4)}  |  Duration : ${duration}`
+    : `Duration : ${duration}`;
+
   const embed = new EmbedBuilder()
     .setTitle("✅ Task Complete")
     .setDescription(result.slice(0, 4000))
-    .setColor(0x00ff00);
-
-  if (showCost) {
-    embed.addFields({
-      name: "Cost (est. API usage)",
-      value: `$${costUsd.toFixed(4)}`,
-      inline: true,
-    });
-  }
-
-  embed
-    .addFields({
-      name: "Duration",
-      value: `${(durationMs / 1000).toFixed(1)}s`,
-      inline: true,
-    })
+    .setColor(0x00ff00)
+    .setFooter({ text: footer })
     .setTimestamp();
 
   return embed;

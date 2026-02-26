@@ -176,23 +176,26 @@ describe("createToolApprovalEmbed", () => {
 // ─── createResultEmbed ───
 
 describe("createResultEmbed", () => {
-  it("shows cost when showCost is true", () => {
+  it("shows cost in footer when showCost is true", () => {
     const embed = createResultEmbed("Done", 0.0123, 5000, true);
-    const costField = embed.data.fields?.find((f) => f.name?.includes("Cost"));
-    expect(costField).toBeDefined();
-    expect(costField?.value).toBe("$0.0123");
+    const footer = embed.data.footer?.text ?? "";
+    expect(footer).toContain("Cost");
+    expect(footer).toContain("$0.0123");
+    expect(footer).toContain("Duration");
+    expect(footer).toContain("5.0s");
   });
 
-  it("hides cost when showCost is false", () => {
+  it("hides cost in footer when showCost is false", () => {
     const embed = createResultEmbed("Done", 0.0123, 5000, false);
-    const costField = embed.data.fields?.find((f) => f.name?.includes("Cost"));
-    expect(costField).toBeUndefined();
+    const footer = embed.data.footer?.text ?? "";
+    expect(footer).not.toContain("Cost");
+    expect(footer).toContain("Duration : 5.0s");
   });
 
   it("formats duration correctly", () => {
     const embed = createResultEmbed("Done", 0, 12500, true);
-    const durField = embed.data.fields?.find((f) => f.name === "Duration");
-    expect(durField?.value).toBe("12.5s");
+    const footer = embed.data.footer?.text ?? "";
+    expect(footer).toContain("12.5s");
   });
 
   it("truncates very long result text to 4000 chars", () => {
