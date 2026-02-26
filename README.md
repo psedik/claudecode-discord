@@ -219,7 +219,11 @@ The bot runs entirely on your own PC/server. No external servers involved, and n
 
 ## macOS Quick Start (Background + Menu Bar)
 
-On macOS, you can run the bot as a background service with a menu bar status indicator.
+On macOS, you can run the bot as a background service with a menu bar status indicator and control panel.
+
+<p align="center">
+  <img src="docs/mac-tray.png" alt="macOS Control Panel" width="400">
+</p>
 
 ```bash
 ./mac-start.sh          # Start (background + menu bar icon)
@@ -228,11 +232,23 @@ On macOS, you can run the bot as a background service with a menu bar status ind
 ./mac-start.sh --fg     # Foreground mode (for debugging)
 ```
 
-- First run without `.env` prompts interactive setup in terminal
+The bot runs in the background with a **menu bar icon**:
+
+<p align="center">
+  <img src="docs/mac-tray-icon.png" alt="macOS Menu Bar Icon" width="300">
+</p>
+
+- **Control Panel GUI**: left-click menu bar icon to open control panel (right-click for dropdown menu)
+- **EN / KR language toggle** with persistent preference
+- First run opens control panel automatically; prompts GUI settings dialog if `.env` not configured
 - Menu bar icon: 🟢 running / 🔴 stopped / ⚙️ setup needed
-- Menu bar provides: start/stop/restart, settings editor (with folder browser), log viewer
-- Settings includes setup guide link and folder picker for project directory
-- Version display and manual update from menu bar when updates available
+- GUI Settings dialog — no manual `.env` editing needed:
+
+<p align="center">
+  <img src="docs/mac-settings.png" alt="macOS Settings Dialog" width="400">
+</p>
+
+- One-click auto-update: pulls code, rebuilds bot and menu bar app
 - Auto-restarts on crash, auto-starts on boot (via launchd)
 
 > **Note:** This feature is macOS-only (requires launchd and Swift).
@@ -248,8 +264,10 @@ On Linux, you can run the bot as a systemd user service with an optional system 
 ./linux-start.sh --fg     # Foreground mode (for debugging)
 ```
 
-- First run without `.env` prompts interactive setup
-- System tray icon: green (running) / red (stopped), with start/stop/settings menu
+- **EN / KR language toggle** with persistent preference
+- First run without `.env` prompts GUI settings dialog
+- System tray icon: green (running) / red (stopped) / orange (setup needed), with start/stop/settings menu
+- GUI Settings dialog with folder browser (GTK3)
 - Version display and manual update from tray when updates available
 - Auto-restarts on crash, auto-starts on boot (via systemd)
 - Tray requires `pip3 install pystray Pillow` (auto-installed on first run)

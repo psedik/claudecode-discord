@@ -189,8 +189,21 @@ Example: If `BASE_PROJECT_DIR=/Users/you/projects`, then `/register my-app` → 
 ./mac-start.sh --fg     # Foreground mode (for debugging)
 ```
 
+<p align="center">
+  <img src="docs/mac-tray.png" alt="macOS Control Panel" width="400">
+</p>
+
+- **Control Panel GUI**: left-click menu bar icon to open control panel (right-click for dropdown menu)
+- **EN / KR language toggle** with persistent preference
+- First run opens control panel automatically; prompts GUI settings dialog if `.env` not configured
 - Menu bar icon: 🟢 running / 🔴 stopped / ⚙️ setup needed
-- Menu bar provides: start/stop/restart, settings editor (with folder browser), log viewer
+- GUI Settings dialog with folder browser — no manual `.env` editing needed:
+
+<p align="center">
+  <img src="docs/mac-settings.png" alt="macOS Settings Dialog" width="400">
+</p>
+
+- One-click auto-update: pulls code, rebuilds bot and menu bar app
 - Auto-restarts on crash, auto-starts on boot (via launchd)
 
 ### Linux (Background + System Tray)
@@ -202,7 +215,9 @@ Example: If `BASE_PROJECT_DIR=/Users/you/projects`, then `/register my-app` → 
 ./linux-start.sh --fg     # Foreground mode (for debugging)
 ```
 
-- System tray icon: green (running) / red (stopped), with start/stop/settings menu
+- **EN / KR language toggle** with persistent preference
+- System tray icon: green (running) / red (stopped) / orange (setup needed), with start/stop/settings menu
+- GUI Settings dialog with folder browser (GTK3)
 - Auto-restarts on crash, auto-starts on boot (via systemd)
 - Tray requires `pip3 install pystray Pillow` (auto-installed on first run)
 - Works without GUI (headless server) — tray is skipped automatically

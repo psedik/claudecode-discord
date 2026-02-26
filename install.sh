@@ -9,7 +9,7 @@ echo ""
 NEED_RESTART=false
 
 # --- 1. Node.js ---
-echo "[1/4] Checking Node.js..."
+echo "[1/5] Checking Node.js..."
 if command -v node &>/dev/null; then
   NODE_VER=$(node -v | sed 's/v//' | cut -d. -f1)
   echo "  Found Node.js $(node -v)"
@@ -51,7 +51,7 @@ fi
 echo ""
 
 # --- 2. Claude Code CLI ---
-echo "[2/4] Checking Claude Code CLI..."
+echo "[2/5] Checking Claude Code CLI..."
 if command -v claude &>/dev/null; then
   echo "  Found Claude Code $(claude --version 2>/dev/null || echo '(version unknown)')"
   echo "  ✅ OK"
@@ -67,26 +67,34 @@ fi
 echo ""
 
 # --- 3. npm install ---
-echo "[3/4] Installing project dependencies..."
+echo "[3/5] Installing project dependencies..."
 npm install
 echo "  ✅ Done"
 echo ""
 
 # --- 4. .env ---
-echo "[4/4] Checking .env file..."
+echo "[4/5] Checking .env file..."
 if [ -f .env ]; then
   echo "  .env already exists"
   echo "  ✅ OK"
 else
-  if [ -f .env.example ]; then
-    cp .env.example .env
-    echo "  Created .env from .env.example"
-    echo "  ⚠ Edit .env and fill in your values before running!"
-  else
-    echo "  ⚠ .env.example not found, skipping"
-  fi
+  echo "  .env not found (will be configured via GUI settings)"
+  echo "  ✅ OK"
 fi
 echo ""
+
+# --- 5. Build ---
+echo "[5/5] Building project..."
+npm run build
+echo "  ✅ Done"
+echo ""
+
+# --- Detect OS-specific start script ---
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  START_SCRIPT="./mac-start.sh"
+else
+  START_SCRIPT="./linux-start.sh"
+fi
 
 # --- Done ---
 echo "==================================="
@@ -96,12 +104,11 @@ echo ""
 if [ "$NEED_RESTART" = true ]; then
   echo "⚠ Next steps:"
   echo "  1. Run 'claude' to login to Claude Code"
-  echo "  2. Edit .env with your Discord bot token and settings"
-  echo "  3. Run 'npm run dev' to start the bot"
+  echo "  2. Run '$START_SCRIPT' to start the bot"
 else
-  echo "Next steps:"
-  echo "  1. Edit .env with your Discord bot token and settings"
-  echo "  2. Run 'npm run dev' to start the bot"
+  echo "Starting bot..."
+  echo ""
+  exec $START_SCRIPT
 fi
 echo ""
 echo "See SETUP.md for detailed instructions."

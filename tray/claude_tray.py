@@ -6,6 +6,7 @@ import os
 import sys
 import threading
 import time
+import webbrowser
 
 try:
     import pystray
@@ -19,8 +20,72 @@ except ImportError:
 SERVICE_NAME = "claude-discord"
 BOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENV_PATH = os.path.join(BOT_DIR, ".env")
+LANG_PREF_FILE = os.path.join(BOT_DIR, ".tray-lang")
 update_available = False
 current_version = "unknown"
+is_korean = False
+
+# Placeholder values from .env.example that should be treated as unconfigured
+EXAMPLE_VALUES = {
+    "your_bot_token_here", "your_server_id_here", "your_user_id_here",
+    "/Users/yourname/projects", "/Users/you/projects",
+}
+
+# --- Localization ---
+
+def load_language():
+    global is_korean
+    try:
+        if os.path.exists(LANG_PREF_FILE):
+            saved = open(LANG_PREF_FILE).read().strip()
+            is_korean = (saved == "kr")
+    except Exception:
+        pass
+
+
+def set_language(korean, icon):
+    global is_korean
+    is_korean = korean
+    try:
+        with open(LANG_PREF_FILE, "w") as f:
+            f.write("kr" if korean else "en")
+    except Exception:
+        pass
+    update_icon(icon)
+    icon.menu = create_menu()
+
+
+def L(en, kr):
+    return kr if is_korean else en
+
+
+# --- Env Configuration Check ---
+
+def _load_env():
+    env = {}
+    if not os.path.exists(ENV_PATH):
+        return env
+    with open(ENV_PATH) as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            env[key.strip()] = value.strip()
+    return env
+
+
+def is_env_configured():
+    if not os.path.exists(ENV_PATH):
+        return False
+    env = _load_env()
+    token = env.get("DISCORD_BOT_TOKEN", "")
+    guild = env.get("DISCORD_GUILD_ID", "")
+    if not token or token in EXAMPLE_VALUES:
+        return False
+    if not guild or guild in EXAMPLE_VALUES:
+        return False
+    return True
 
 
 def is_running():
@@ -90,18 +155,21 @@ def start_bot(icon, item):
     subprocess.run(["systemctl", "--user", "start", SERVICE_NAME], capture_output=True)
     time.sleep(2)
     update_icon(icon)
+    icon.menu = create_menu()
 
 
 def stop_bot(icon, item):
     subprocess.run(["systemctl", "--user", "stop", SERVICE_NAME], capture_output=True)
     time.sleep(1)
     update_icon(icon)
+    icon.menu = create_menu()
 
 
 def restart_bot(icon, item):
     subprocess.run(["systemctl", "--user", "restart", SERVICE_NAME], capture_output=True)
     time.sleep(2)
     update_icon(icon)
+    icon.menu = create_menu()
 
 
 def open_log(icon, item):
@@ -114,10 +182,14 @@ def open_folder(icon, item):
     subprocess.Popen(["xdg-open", BOT_DIR])
 
 
+def open_github(icon, item):
+    webbrowser.open("https://github.com/chadingTV/claudecode-discord")
+
+
 def edit_settings(icon, item):
     """Open settings dialog using GTK3 (native look) or fallback"""
     try:
-        _edit_settings_gtk()
+        _edit_settings_gtk(icon)
     except Exception:
         # Fallback: open in text editor
         env_path = os.path.join(BOT_DIR, ".env")
@@ -127,28 +199,39 @@ def edit_settings(icon, item):
             subprocess.Popen(["xdg-open", os.path.join(BOT_DIR, ".env.example")])
 
 
-def _edit_settings_gtk():
+def _edit_settings_gtk(icon=None):
     """Edit settings using GTK3 native dialog with pre-filled values"""
     import gi
     gi.require_version("Gtk", "3.0")
-    from gi.repository import Gtk, Gdk
+    from gi.repository import Gtk
 
     env = _load_env()
     fields = [
-        ("DISCORD_BOT_TOKEN", "Discord Bot Token"),
-        ("DISCORD_GUILD_ID", "Discord Guild ID"),
-        ("ALLOWED_USER_IDS", "Allowed User IDs (comma-separated)"),
-        ("BASE_PROJECT_DIR", "Base Project Directory"),
-        ("RATE_LIMIT_PER_MINUTE", "Rate Limit Per Minute"),
-        ("SHOW_COST", "Show Cost (true/false)"),
+        ("DISCORD_BOT_TOKEN", L("Discord Bot Token", "Discord 봇 토큰")),
+        ("DISCORD_GUILD_ID", L("Discord Guild ID", "Discord 서버 ID")),
+        ("ALLOWED_USER_IDS", L("Allowed User IDs (comma-separated)", "허용된 사용자 ID (쉼표로 구분)")),
+        ("BASE_PROJECT_DIR", L("Base Project Directory", "기본 프로젝트 디렉토리")),
+        ("RATE_LIMIT_PER_MINUTE", L("Rate Limit Per Minute", "분당 요청 제한")),
+        ("SHOW_COST", L("Show Cost (true/false)", "비용 표시 (true/false)")),
     ]
-    defaults = {"RATE_LIMIT_PER_MINUTE": "10", "SHOW_COST": "true", "BASE_PROJECT_DIR": BOT_DIR}
+    defaults = {"RATE_LIMIT_PER_MINUTE": "10", "SHOW_COST": "true", "BASE_PROJECT_DIR": ""}
+    placeholders = {
+        "DISCORD_BOT_TOKEN": L("Paste your bot token here", "봇 토큰을 여기에 붙여넣으세요"),
+        "DISCORD_GUILD_ID": L("Right-click server > Copy Server ID", "서버 우클릭 > 서버 ID 복사"),
+        "ALLOWED_USER_IDS": L("e.g. 123456789,987654321", "예: 123456789,987654321"),
+        "BASE_PROJECT_DIR": L("e.g. /home/you/projects", "예: /home/you/projects"),
+        "RATE_LIMIT_PER_MINUTE": "10",
+        "SHOW_COST": L("false recommended for Max plan", "Max 요금제는 false 권장"),
+    }
 
     dialog = Gtk.Dialog(
-        title="Claude Discord Bot Settings",
+        title=L("Claude Discord Bot Settings", "Claude Discord Bot 설정"),
         flags=0,
     )
-    dialog.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Save", Gtk.ResponseType.OK)
+    dialog.add_buttons(
+        L("Cancel", "취소"), Gtk.ResponseType.CANCEL,
+        L("Save", "저장"), Gtk.ResponseType.OK
+    )
     dialog.set_default_size(550, -1)
     dialog.set_position(Gtk.WindowPosition.CENTER)
     dialog.set_border_width(15)
@@ -162,11 +245,11 @@ def _edit_settings_gtk():
 
     # Title
     title = Gtk.Label()
-    title.set_markup("<b><big>Claude Discord Bot Settings</big></b>")
+    title.set_markup(f"<b><big>{L('Claude Discord Bot Settings', 'Claude Discord Bot 설정')}</big></b>")
     title.set_halign(Gtk.Align.START)
     content.pack_start(title, False, False, 0)
 
-    subtitle = Gtk.Label(label="Please fill in the required fields.")
+    subtitle = Gtk.Label(label=L("Please fill in the required fields.", "필수 항목을 입력해주세요."))
     subtitle.set_halign(Gtk.Align.START)
     subtitle.get_style_context().add_class("dim-label")
     content.pack_start(subtitle, False, False, 0)
@@ -174,7 +257,7 @@ def _edit_settings_gtk():
     # Setup guide link
     link = Gtk.LinkButton.new_with_label(
         "https://github.com/chadingTV/claudecode-discord/blob/main/SETUP.md",
-        "📖 Open Setup Guide"
+        L("Open Setup Guide", "설정 가이드 열기")
     )
     link.set_halign(Gtk.Align.START)
     content.pack_start(link, False, False, 0)
@@ -192,15 +275,19 @@ def _edit_settings_gtk():
             hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
             entry = Gtk.Entry()
             entry.set_hexpand(True)
+            entry.set_placeholder_text(placeholders.get(key, ""))
             hbox.pack_start(entry, True, True, 0)
 
-            browse_btn = Gtk.Button(label="Browse...")
+            browse_btn = Gtk.Button(label=L("Browse...", "찾아보기..."))
             def on_browse(btn, e=entry):
                 chooser = Gtk.FileChooserDialog(
-                    title="Select Base Project Directory",
+                    title=L("Select Base Project Directory", "기본 프로젝트 디렉토리 선택"),
                     action=Gtk.FileChooserAction.SELECT_FOLDER,
                 )
-                chooser.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Select", Gtk.ResponseType.OK)
+                chooser.add_buttons(
+                    L("Cancel", "취소"), Gtk.ResponseType.CANCEL,
+                    L("Select", "선택"), Gtk.ResponseType.OK
+                )
                 chooser.set_position(Gtk.WindowPosition.CENTER)
                 if chooser.run() == Gtk.ResponseType.OK:
                     e.set_text(chooser.get_filename())
@@ -210,14 +297,18 @@ def _edit_settings_gtk():
             content.pack_start(hbox, False, False, 0)
         else:
             entry = Gtk.Entry()
+            entry.set_placeholder_text(placeholders.get(key, ""))
             content.pack_start(entry, False, False, 0)
 
-        # Pre-fill
+        # Pre-fill (filter out example values)
         current = env.get(key, "")
+        if current in EXAMPLE_VALUES:
+            current = ""
+
         if key == "DISCORD_BOT_TOKEN" and len(current) > 10:
-            entry.set_visibility(False)
-            entry.set_invisible_char('•')
-            entry.set_text(current)
+            entry.set_placeholder_text(
+                "****" + current[-6:] + L(" (enter full token to change)", " (변경하려면 전체 토큰 입력)")
+            )
         elif current:
             entry.set_text(current)
         else:
@@ -227,7 +318,10 @@ def _edit_settings_gtk():
 
         entries[key] = entry
 
-    note = Gtk.Label(label="* Max plan users should set Show Cost to false")
+    note = Gtk.Label(label=L(
+        "* Max plan users should set Show Cost to false",
+        "* Max 요금제 사용자는 Show Cost를 false로 설정하세요"
+    ))
     note.set_halign(Gtk.Align.START)
     note.get_style_context().add_class("dim-label")
     content.pack_start(note, False, False, 4)
@@ -242,7 +336,12 @@ def _edit_settings_gtk():
             if val:
                 new_env[key] = val
             elif key == "DISCORD_BOT_TOKEN":
-                new_env[key] = env.get(key, "")
+                # Keep existing token if left empty
+                existing = env.get(key, "")
+                if existing not in EXAMPLE_VALUES:
+                    new_env[key] = existing
+                else:
+                    new_env[key] = ""
             else:
                 new_env[key] = defaults.get(key, "")
 
@@ -250,7 +349,10 @@ def _edit_settings_gtk():
             err = Gtk.MessageDialog(
                 message_type=Gtk.MessageType.ERROR,
                 buttons=Gtk.ButtonsType.OK,
-                text="Bot Token, Guild ID, and User IDs are required."
+                text=L(
+                    "Bot Token, Guild ID, and User IDs are required.",
+                    "Bot Token, Guild ID, User IDs는 필수 항목입니다."
+                )
             )
             err.run()
             err.destroy()
@@ -265,19 +367,9 @@ def _edit_settings_gtk():
 
     dialog.destroy()
 
-
-def _load_env():
-    env = {}
-    if not os.path.exists(ENV_PATH):
-        return env
-    with open(ENV_PATH) as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith("#") or "=" not in line:
-                continue
-            key, _, value = line.partition("=")
-            env[key.strip()] = value.strip()
-    return env
+    if icon:
+        update_icon(icon)
+        icon.menu = create_menu()
 
 
 def is_autostart_enabled():
@@ -304,64 +396,102 @@ def quit_all(icon, item):
 
 def update_icon(icon):
     running = is_running()
-    color = (76, 175, 80, 255) if running else (244, 67, 54, 255)  # green / red
+    has_env = is_env_configured()
+    if not has_env:
+        color = (255, 165, 0, 255)  # orange
+        icon.title = L("Claude Bot: Setup Required", "Claude Bot: 설정 필요")
+    elif running:
+        color = (76, 175, 80, 255)  # green
+        icon.title = L("Claude Bot: Running", "Claude Bot: 실행 중")
+    else:
+        color = (244, 67, 54, 255)  # red
+        icon.title = L("Claude Bot: Stopped", "Claude Bot: 중지됨")
     icon.icon = create_icon(color)
-    icon.title = "Claude Bot: Running" if running else "Claude Bot: Stopped"
 
 
 def create_menu():
     running = is_running()
-    has_env = os.path.exists(ENV_PATH)
+    has_env = is_env_configured()
 
-    version_item = pystray.MenuItem(f"Version: {current_version}", None, enabled=False)
-    update_item = pystray.MenuItem("⬆️ Update Available", perform_update, visible=update_available)
-    autostart_item = pystray.MenuItem("Start at Login", toggle_autostart, checked=lambda item: is_autostart_enabled())
+    version_item = pystray.MenuItem(L("Version: ", "버전: ") + current_version, None, enabled=False)
+    update_item = pystray.MenuItem(
+        L("Update Available", "업데이트 가능"),
+        perform_update, visible=update_available
+    )
+    autostart_item = pystray.MenuItem(
+        L("Launch on System Startup", "시스템 시작 시 자동 실행"),
+        toggle_autostart, checked=lambda item: is_autostart_enabled()
+    )
+
+    # Language submenu
+    lang_menu = pystray.Menu(
+        pystray.MenuItem("English", lambda icon, item: set_language(False, icon),
+                         checked=lambda item: not is_korean),
+        pystray.MenuItem("한국어", lambda icon, item: set_language(True, icon),
+                         checked=lambda item: is_korean),
+    )
+    lang_item = pystray.MenuItem(
+        "Language: KR" if is_korean else "Language: EN",
+        lang_menu
+    )
+
+    # GitHub link
+    github_item = pystray.MenuItem("GitHub: chadingTV/claudecode-discord", open_github)
 
     if not has_env:
         return pystray.Menu(
-            pystray.MenuItem("⚙️ Setup Required", None, enabled=False),
+            pystray.MenuItem(L("Setup Required", "설정 필요"), None, enabled=False),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Setup...", edit_settings),
+            pystray.MenuItem(L("Setup...", "설정..."), edit_settings),
             pystray.Menu.SEPARATOR,
             autostart_item,
+            lang_item,
             version_item,
             update_item,
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Quit", quit_all),
+            github_item,
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem(L("Quit", "종료"), quit_all),
         )
 
     if running:
         return pystray.Menu(
-            pystray.MenuItem("🟢 Running", None, enabled=False),
+            pystray.MenuItem(L("Running", "실행 중"), None, enabled=False),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Stop Bot", stop_bot),
-            pystray.MenuItem("Restart Bot", restart_bot),
+            pystray.MenuItem(L("Stop Bot", "봇 중지"), stop_bot),
+            pystray.MenuItem(L("Restart Bot", "봇 재시작"), restart_bot),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Settings...", edit_settings),
-            pystray.MenuItem("View Log", open_log),
-            pystray.MenuItem("Open Folder", open_folder),
+            pystray.MenuItem(L("Settings...", "설정..."), edit_settings),
+            pystray.MenuItem(L("View Log", "로그 보기"), open_log),
+            pystray.MenuItem(L("Open Folder", "폴더 열기"), open_folder),
             pystray.Menu.SEPARATOR,
             autostart_item,
+            lang_item,
             version_item,
             update_item,
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Quit", quit_all),
+            github_item,
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem(L("Quit", "종료"), quit_all),
         )
     else:
         return pystray.Menu(
-            pystray.MenuItem("🔴 Stopped", None, enabled=False),
+            pystray.MenuItem(L("Stopped", "중지됨"), None, enabled=False),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Start Bot", start_bot),
+            pystray.MenuItem(L("Start Bot", "봇 시작"), start_bot),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Settings...", edit_settings),
-            pystray.MenuItem("View Log", open_log),
-            pystray.MenuItem("Open Folder", open_folder),
+            pystray.MenuItem(L("Settings...", "설정..."), edit_settings),
+            pystray.MenuItem(L("View Log", "로그 보기"), open_log),
+            pystray.MenuItem(L("Open Folder", "폴더 열기"), open_folder),
             pystray.Menu.SEPARATOR,
             autostart_item,
+            lang_item,
             version_item,
             update_item,
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Quit", quit_all),
+            github_item,
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem(L("Quit", "종료"), quit_all),
         )
 
 
@@ -384,21 +514,28 @@ def refresh_loop(icon):
 
 def main():
     global current_version
+    load_language()
     current_version = get_version()
     check_for_updates()
 
     running = is_running()
-    color = (76, 175, 80, 255) if running else (244, 67, 54, 255)
+    has_env = is_env_configured()
+    if not has_env:
+        color = (255, 165, 0, 255)  # orange
+    elif running:
+        color = (76, 175, 80, 255)  # green
+    else:
+        color = (244, 67, 54, 255)  # red
 
     icon = pystray.Icon(
         "claude-bot",
         create_icon(color),
-        "Claude Bot",
+        L("Claude Bot", "Claude Bot"),
         menu=create_menu(),
     )
 
-    # .env 없으면 자동으로 설정 창 열기
-    if not os.path.exists(ENV_PATH):
+    # .env 없거나 설정 안 됐으면 자동으로 설정 창 열기
+    if not is_env_configured():
         def auto_open_settings():
             time.sleep(1)
             edit_settings(icon, None)

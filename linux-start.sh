@@ -1,10 +1,10 @@
 #!/bin/bash
 # Claude Discord Bot - Linux Auto-update & Start Script
-# 사용법:
-#   ./linux-start.sh          → 백그라운드 실행 (systemd 등록)
-#   ./linux-start.sh --fg     → 포그라운드 실행 (디버깅용)
-#   ./linux-start.sh --stop   → 중지
-#   ./linux-start.sh --status → 상태 확인
+# Usage:
+#   ./linux-start.sh          → Start (background + system tray)
+#   ./linux-start.sh --fg     → Foreground mode (for debugging)
+#   ./linux-start.sh --stop   → Stop
+#   ./linux-start.sh --status → Check status
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
@@ -29,15 +29,15 @@ find_node() {
 
 NODE_BIN=$(find_node)
 if [ -z "$NODE_BIN" ]; then
-    echo "❌ Node.js를 찾을 수 없습니다"
+    echo "❌ Node.js not found"
     exit 1
 fi
 
 # --stop: 중지
 if [ "$1" = "--stop" ]; then
     systemctl --user stop "$SERVICE_NAME" 2>/dev/null
-    echo "🔴 봇 중지됨"
-    # 트레이 앱도 종료
+    echo "🔴 Bot stopped"
+    # Stop tray app too
     pkill -f "claude_tray.py" 2>/dev/null
     exit 0
 fi
@@ -45,15 +45,15 @@ fi
 # --status: 상태 확인
 if [ "$1" = "--status" ]; then
     if systemctl --user is-active "$SERVICE_NAME" &>/dev/null; then
-        echo "🟢 봇 실행 중"
+        echo "🟢 Bot running"
         systemctl --user status "$SERVICE_NAME" --no-pager -l 2>/dev/null | head -5
     else
-        echo "🔴 봇 중지됨"
+        echo "🔴 Bot stopped"
     fi
     exit 0
 fi
 
-# --fg: 포그라운드 실행
+# --fg: Foreground mode
 if [ "$1" = "--fg" ]; then
     # nvm 환경 로드
     if [ -s "$HOME/.nvm/nvm.sh" ]; then
@@ -63,42 +63,42 @@ if [ "$1" = "--fg" ]; then
     cd "$SCRIPT_DIR"
 
     VERSION=$(git describe --tags --always 2>/dev/null || echo "unknown")
-    echo "[claude-bot] 현재 버전: $VERSION"
-    echo "[claude-bot] Git 업데이트 확인 중..."
+    echo "[claude-bot] Current version: $VERSION"
+    echo "[claude-bot] Checking for updates..."
     git fetch origin main 2>/dev/null
     LOCAL=$(git rev-parse HEAD 2>/dev/null)
     REMOTE=$(git rev-parse origin/main 2>/dev/null)
 
     if [ -n "$LOCAL" ] && [ -n "$REMOTE" ] && [ "$LOCAL" != "$REMOTE" ]; then
-        echo "[claude-bot] 업데이트가 있습니다 (메뉴바/트레이에서 업데이트 가능)"
+        echo "[claude-bot] Update available (update from tray)"
     else
-        echo "[claude-bot] 최신 버전입니다"
+        echo "[claude-bot] Up to date"
     fi
 
     if [ ! -d "dist" ]; then
-        echo "[claude-bot] 빌드 파일 없음, 빌드 중..."
+        echo "[claude-bot] No build files found, building..."
         npm run build
     fi
 
-    echo "[claude-bot] 봇 시작 (포그라운드)..."
+    echo "[claude-bot] Starting bot (foreground)..."
     touch "$SCRIPT_DIR/.bot.lock"
     trap 'rm -f "$SCRIPT_DIR/.bot.lock"' EXIT
     exec "$NODE_BIN" dist/index.js
 fi
 
-# 기본: 백그라운드 실행 (systemd 등록)
+# Default: background mode (register with systemd)
 
-# systemd user 디렉토리 생성
+# Create systemd user directory
 mkdir -p "$HOME/.config/systemd/user"
 
-# 이미 실행 중이면 종료 후 재시작
+# Stop existing bot if running
 if systemctl --user is-active "$SERVICE_NAME" &>/dev/null; then
-    echo "🔄 기존 봇 종료 중..."
+    echo "🔄 Stopping existing bot..."
     systemctl --user stop "$SERVICE_NAME"
     sleep 1
 fi
 
-# systemd 서비스 파일 생성
+# Create systemd service file
 cat > "$SERVICE_FILE" << EOF
 [Unit]
 Description=Claude Discord Bot
@@ -120,13 +120,13 @@ EOF
 
 systemctl --user daemon-reload
 
-# 트레이 앱 먼저 실행 (설정이 없으면 트레이에서 설정하도록)
+# Start tray app (shows settings dialog if .env not configured)
 TRAY_SCRIPT="$SCRIPT_DIR/tray/claude_tray.py"
 if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
     if [ -f "$TRAY_SCRIPT" ] && command -v python3 &>/dev/null; then
         # pystray + Pillow 설치 확인 및 자동 설치
         if ! python3 -c "import pystray; from PIL import Image" 2>/dev/null; then
-            echo "📦 트레이 앱 의존성 설치 중..."
+            echo "📦 Installing tray app dependencies..."
             pip3 install pystray Pillow 2>/dev/null || pip install pystray Pillow 2>/dev/null
         fi
         # AppIndicator + tkinter 시스템 패키지 확인 (Ubuntu/Pop!_OS/Debian)
@@ -139,7 +139,7 @@ if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
             NEED_APT="$NEED_APT python3-tk"
         fi
         if [ -n "$NEED_APT" ]; then
-            echo "📦 시스템 트레이 라이브러리 설치 중..."
+            echo "📦 Installing system tray libraries..."
             sudo apt install -y $NEED_APT 2>/dev/null || true
         fi
         if python3 -c "import pystray; from PIL import Image" 2>/dev/null; then
@@ -149,14 +149,22 @@ if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
     fi
 fi
 
-# .env 있으면 봇 시작, 없으면 트레이에서 설정하도록
-if [ -f "$ENV_FILE" ]; then
+# Start bot if .env is properly configured, otherwise let tray handle setup
+is_env_configured() {
+    [ -f "$ENV_FILE" ] || return 1
+    local token=$(grep "^DISCORD_BOT_TOKEN=" "$ENV_FILE" 2>/dev/null | cut -d= -f2)
+    local guild=$(grep "^DISCORD_GUILD_ID=" "$ENV_FILE" 2>/dev/null | cut -d= -f2)
+    [ -n "$token" ] && [ "$token" != "your_bot_token_here" ] && \
+    [ -n "$guild" ] && [ "$guild" != "your_server_id_here" ]
+}
+
+if is_env_configured; then
     systemctl --user enable "$SERVICE_NAME" 2>/dev/null
     systemctl --user start "$SERVICE_NAME"
-    echo "🟢 봇이 백그라운드에서 시작되었습니다"
+    echo "🟢 Bot started in background"
 else
-    echo "⚙️ .env not found. Please configure settings from the tray icon."
+    echo "⚙️ .env not configured. Please configure settings from the tray icon."
 fi
-echo "   중지: ./linux-start.sh --stop"
-echo "   상태: ./linux-start.sh --status"
-echo "   로그: tail -f bot.log"
+echo "   Stop:   ./linux-start.sh --stop"
+echo "   Status: ./linux-start.sh --status"
+echo "   Log:    tail -f bot.log"
