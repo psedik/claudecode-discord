@@ -376,6 +376,23 @@ class ClaudeBotTray : Form
         {
             menu.Items.Add(L("Update Available", "업데이트 가능"), null, PerformUpdate);
         }
+        else
+        {
+            menu.Items.Add(L("Check for Updates", "업데이트 확인"), null, (s, ev) => {
+                CheckForUpdates();
+                if (updateAvailable)
+                {
+                    BuildMenu();
+                }
+                else
+                {
+                    MessageBox.Show(
+                        L("You are running the latest version.", "최신 버전을 사용 중입니다."),
+                        L("No Updates", "업데이트 없음"),
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            });
+        }
 
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(L("Quit", "종료"), null, QuitAll);
@@ -769,12 +786,36 @@ class ClaudeBotTray : Form
 
         int y = 15;
 
+        // Header: Title + Version + Language toggle
+        var titleLabel = new Label()
+        {
+            Text = "Claude Discord Bot",
+            Left = 25,
+            Top = y,
+            Width = 280,
+            Height = 22,
+            Font = new Font(FontFamily.GenericSansSerif, 14, FontStyle.Bold)
+        };
+        controlPanel.Controls.Add(titleLabel);
+
+        var verSubLabel = new Label()
+        {
+            Text = currentVersion,
+            Left = 25,
+            Top = y + 24,
+            Width = 280,
+            Height = 16,
+            Font = new Font(FontFamily.GenericSansSerif, 9),
+            ForeColor = Color.FromArgb(140, 140, 140)
+        };
+        controlPanel.Controls.Add(verSubLabel);
+
         // Language toggle - top right
         var enBtn = new Label()
         {
             Text = "EN",
             Left = panelWidth - 110,
-            Top = y,
+            Top = y + 4,
             Width = 32,
             Height = 22,
             TextAlign = ContentAlignment.MiddleCenter,
@@ -787,7 +828,7 @@ class ClaudeBotTray : Form
         {
             Text = "|",
             Left = panelWidth - 78,
-            Top = y,
+            Top = y + 4,
             Width = 10,
             Height = 22,
             TextAlign = ContentAlignment.MiddleCenter,
@@ -797,7 +838,7 @@ class ClaudeBotTray : Form
         {
             Text = "KR",
             Left = panelWidth - 68,
-            Top = y,
+            Top = y + 4,
             Width = 32,
             Height = 22,
             TextAlign = ContentAlignment.MiddleCenter,
@@ -812,6 +853,11 @@ class ClaudeBotTray : Form
         controlPanel.Controls.Add(divLabel);
         controlPanel.Controls.Add(krBtn);
 
+        y += 48;
+
+        // Separator after header
+        var headerSep = new Label() { Left = 25, Top = y, Width = btnWidth, Height = 1, BackColor = Color.FromArgb(220, 220, 220) };
+        controlPanel.Controls.Add(headerSep);
         y += 10;
 
         // Status indicator
@@ -882,11 +928,6 @@ class ClaudeBotTray : Form
         controlPanel.Controls.Add(autoCheck);
         y += 32;
 
-        // Version
-        var verLabel = new Label() { Text = L("Version: ", "버전: ") + currentVersion, Left = 25, Top = y, Width = btnWidth, ForeColor = Color.Gray, Font = new Font(FontFamily.GenericSansSerif, 9) };
-        controlPanel.Controls.Add(verLabel);
-        y += 26;
-
         // Update button
         if (updateAvailable)
         {
@@ -899,6 +940,26 @@ class ClaudeBotTray : Form
             updateBtn.FlatStyle = FlatStyle.Flat;
             updateBtn.Click += (s, ev) => { controlPanel.Close(); PerformUpdate(null, null); };
             controlPanel.Controls.Add(updateBtn);
+            y += 48;
+        }
+        else
+        {
+            var checkUpdateBtn = new Button() { Text = L("Check for Updates", "업데이트 확인"), Left = 25, Top = y, Width = btnWidth, Height = 40 };
+            checkUpdateBtn.Click += (s, ev) => {
+                CheckForUpdates();
+                if (updateAvailable)
+                {
+                    RebuildControlPanel();
+                }
+                else
+                {
+                    MessageBox.Show(
+                        L("You are running the latest version.", "최신 버전을 사용 중입니다."),
+                        L("No Updates", "업데이트 없음"),
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            };
+            controlPanel.Controls.Add(checkUpdateBtn);
             y += 48;
         }
 
