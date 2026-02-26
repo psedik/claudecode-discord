@@ -187,6 +187,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func isRunning() -> Bool {
+        // Check both launchctl (primary) and .bot.lock (fallback)
+        let output = runShell("launchctl list | grep '\(label)' | awk '{print $1}'")
+        let pid = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !pid.isEmpty && pid != "-" && pid != "0" {
+            return true
+        }
         return FileManager.default.fileExists(atPath: botDir + "/.bot.lock")
     }
 
