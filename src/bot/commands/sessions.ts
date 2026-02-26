@@ -9,6 +9,7 @@ import path from "node:path";
 import os from "node:os";
 import readline from "node:readline";
 import { getProject, getSession } from "../../db/database.js";
+import { L } from "../../utils/i18n.js";
 
 interface SessionInfo {
   sessionId: string;
@@ -240,7 +241,7 @@ export async function execute(
 
   if (!project) {
     await interaction.editReply({
-      content: "This channel is not registered to any project. Use `/register` first.",
+      content: L("This channel is not registered to any project. Use `/register` first.", "이 채널은 어떤 프로젝트에도 등록되어 있지 않습니다. 먼저 `/register`를 사용하세요."),
     });
     return;
   }
@@ -249,7 +250,7 @@ export async function execute(
 
   if (sessions.length === 0) {
     await interaction.editReply({
-      content: `No existing sessions found for \`${project.project_path}\``,
+      content: L(`No existing sessions found for \`${project.project_path}\``, `\`${project.project_path}\`에 대한 기존 세션을 찾을 수 없습니다`),
     });
     return;
   }
@@ -261,8 +262,8 @@ export async function execute(
   // Build select menu (max 25 options, reserve 1 for "New Session")
   const options: Array<{ label: string; description: string; value: string; default?: boolean }> = [
     {
-      label: "✨ 새 세션 만들기",
-      description: "기존 세션 없이 새로운 대화를 시작합니다",
+      label: L("✨ Create New Session", "✨ 새 세션 만들기"),
+      description: L("Start a new conversation without an existing session", "기존 세션 없이 새로운 대화를 시작합니다"),
       value: "__new_session__",
     },
   ];
@@ -274,11 +275,11 @@ export async function execute(
     const diffHr = Math.floor(diffMs / 3600000);
     const diffDay = Math.floor(diffMs / 86400000);
     const timeStr =
-      diffMin < 1 ? "방금" :
-      diffMin < 60 ? `${diffMin}분 전` :
-      diffHr < 24 ? `${diffHr}시간 전` :
-      diffDay < 7 ? `${diffDay}일 전` :
-      date.toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+      diffMin < 1 ? L("just now", "방금") :
+      diffMin < 60 ? L(`${diffMin}m ago`, `${diffMin}분 전`) :
+      diffHr < 24 ? L(`${diffHr}h ago`, `${diffHr}시간 전`) :
+      diffDay < 7 ? L(`${diffDay}d ago`, `${diffDay}일 전`) :
+      date.toLocaleDateString(L("en-US", "ko-KR"), { month: "short", day: "numeric" });
 
     const sizeKB = Math.round(s.fileSize / 1024);
     const isActive = s.sessionId === activeSessionId;
@@ -286,7 +287,7 @@ export async function execute(
       ? `▶ ${s.firstMessage.slice(0, 48)}`
       : s.firstMessage.slice(0, 50) || `Session ${i + 1}`;
     const desc = isActive
-      ? `사용 중 | ${timeStr} | ${sizeKB}KB`
+      ? `${L("Active", "사용 중")} | ${timeStr} | ${sizeKB}KB`
       : `${timeStr} | ${sizeKB}KB | ${s.sessionId.slice(0, 8)}...`;
 
     return {
@@ -301,7 +302,7 @@ export async function execute(
 
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId("session-select")
-    .setPlaceholder("Select a session to resume...")
+    .setPlaceholder(L("Select a session to resume...", "재개할 세션을 선택하세요..."))
     .addOptions(options);
 
   const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
@@ -309,12 +310,12 @@ export async function execute(
   await interaction.editReply({
     embeds: [
       {
-        title: "Claude Code Sessions",
+        title: L("Claude Code Sessions", "Claude Code 세션"),
         description: [
           `Project: \`${project.project_path}\``,
-          `Found **${sessions.length}** session(s)`,
+          L(`Found **${sessions.length}** session(s)`, `**${sessions.length}**개의 세션을 찾았습니다`),
           "",
-          "Select a session below to resume or delete it.",
+          L("Select a session below to resume or delete it.", "아래에서 세션을 선택하여 재개하거나 삭제하세요."),
         ].join("\n"),
         color: 0x7c3aed,
       },

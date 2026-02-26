@@ -4,6 +4,7 @@ import {
 } from "discord.js";
 import { getProject } from "../../db/database.js";
 import { sessionManager } from "../../claude/session-manager.js";
+import { L } from "../../utils/i18n.js";
 
 export const data = new SlashCommandBuilder()
   .setName("stop")
@@ -17,7 +18,7 @@ export async function execute(
 
   if (!project) {
     await interaction.editReply({
-      content: "This channel is not registered to any project.",
+      content: L("This channel is not registered to any project.", "이 채널은 어떤 프로젝트에도 등록되어 있지 않습니다."),
     });
     return;
   }
@@ -27,15 +28,15 @@ export async function execute(
     await interaction.editReply({
       embeds: [
         {
-          title: "Session Stopped",
-          description: `Stopped Claude Code session for \`${project.project_path}\``,
+          title: L("Session Stopped", "세션 중지됨"),
+          description: L(`Stopped Claude Code session for \`${project.project_path}\``, `\`${project.project_path}\` Claude Code 세션이 중지되었습니다`),
           color: 0xff6600,
         },
       ],
     });
   } else {
     await interaction.editReply({
-      content: "No active session in this channel.",
+      content: L("No active session in this channel.", "이 채널에 활성 세션이 없습니다."),
     });
   }
 }

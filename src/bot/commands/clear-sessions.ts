@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { getProject } from "../../db/database.js";
 import { findSessionDir } from "./sessions.js";
+import { L } from "../../utils/i18n.js";
 
 export const data = new SlashCommandBuilder()
   .setName("clear-sessions")
@@ -21,7 +22,7 @@ export async function execute(
 
   if (!project) {
     await interaction.editReply({
-      content: "This channel is not registered to any project. Use `/register` first.",
+      content: L("This channel is not registered to any project. Use `/register` first.", "이 채널은 어떤 프로젝트에도 등록되어 있지 않습니다. 먼저 `/register`를 사용하세요."),
     });
     return;
   }
@@ -29,7 +30,7 @@ export async function execute(
   const sessionDir = findSessionDir(project.project_path);
   if (!sessionDir) {
     await interaction.editReply({
-      content: `No session directory found for \`${project.project_path}\``,
+      content: L(`No session directory found for \`${project.project_path}\``, `\`${project.project_path}\`에 대한 세션 디렉토리를 찾을 수 없습니다`),
     });
     return;
   }
@@ -37,7 +38,7 @@ export async function execute(
   const files = fs.readdirSync(sessionDir).filter((f) => f.endsWith(".jsonl"));
   if (files.length === 0) {
     await interaction.editReply({
-      content: "No session files to delete.",
+      content: L("No session files to delete.", "삭제할 세션 파일이 없습니다."),
     });
     return;
   }
@@ -55,10 +56,10 @@ export async function execute(
   await interaction.editReply({
     embeds: [
       {
-        title: "Sessions Cleared",
+        title: L("Sessions Cleared", "세션 정리됨"),
         description: [
           `Project: \`${project.project_path}\``,
-          `Deleted **${deleted}** session file(s)`,
+          L(`Deleted **${deleted}** session file(s)`, `**${deleted}**개의 세션 파일이 삭제되었습니다`),
         ].join("\n"),
         color: 0xff6b6b,
       },

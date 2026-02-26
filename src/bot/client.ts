@@ -11,6 +11,7 @@ import { getConfig } from "../utils/config.js";
 import { handleMessage } from "./handlers/message.js";
 import { handleButtonInteraction, handleSelectMenuInteraction } from "./handlers/interaction.js";
 import { isAllowedUser } from "../security/guard.js";
+import { L } from "../utils/i18n.js";
 
 // Import commands
 import * as registerCmd from "./commands/register.js";
@@ -63,7 +64,7 @@ export async function startBot(): Promise<Client> {
         // Auth check
         if (!isAllowedUser(interaction.user.id)) {
           await interaction.reply({
-            content: "You are not authorized to use this bot.",
+            content: L("You are not authorized to use this bot.", "이 봇을 사용할 권한이 없습니다."),
             flags: ["Ephemeral"],
           });
           return;
@@ -83,7 +84,7 @@ export async function startBot(): Promise<Client> {
       }
     } catch (error) {
       console.error("Interaction error:", error);
-      const content = "An error occurred while processing your command.";
+      const content = L("An error occurred while processing your command.", "명령을 처리하는 중 오류가 발생했습니다.");
       try {
         if (interaction.isRepliable()) {
           if (interaction.replied || interaction.deferred) {

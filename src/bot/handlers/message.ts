@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
+import { L } from "../../utils/i18n.js";
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
 
@@ -57,13 +58,13 @@ export async function handleMessage(message: Message): Promise<void> {
 
   // Auth check
   if (!isAllowedUser(message.author.id)) {
-    await message.reply("You are not authorized to use this bot.");
+    await message.reply(L("You are not authorized to use this bot.", "이 봇을 사용할 권한이 없습니다."));
     return;
   }
 
   // Rate limit
   if (!checkRateLimit(message.author.id)) {
-    await message.reply("Rate limit exceeded. Please wait a moment.");
+    await message.reply(L("Rate limit exceeded. Please wait a moment.", "요청 한도를 초과했습니다. 잠시 후 다시 시도하세요."));
     return;
   }
 
@@ -107,11 +108,11 @@ export async function handleMessage(message: Message): Promise<void> {
   // If session is active, offer to queue the message
   if (sessionManager.isActive(message.channelId)) {
     if (sessionManager.hasQueue(message.channelId)) {
-      await message.reply("⏳ 이미 큐 추가 대기 중인 메시지가 있습니다. 버튼을 먼저 눌러주세요.");
+      await message.reply(L("⏳ A message is already waiting to be queued. Please press the button first.", "⏳ 이미 큐 추가 대기 중인 메시지가 있습니다. 버튼을 먼저 눌러주세요."));
       return;
     }
     if (sessionManager.isQueueFull(message.channelId)) {
-      await message.reply(`⏳ 큐가 가득 찼습니다 (최대 5개). 현재 작업 완료를 기다려주세요.`);
+      await message.reply(L("⏳ Queue is full (max 5). Please wait for the current task to finish.", "⏳ 큐가 가득 찼습니다 (최대 5개). 현재 작업 완료를 기다려주세요."));
       return;
     }
 
@@ -120,18 +121,18 @@ export async function handleMessage(message: Message): Promise<void> {
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(`queue-yes:${message.channelId}`)
-        .setLabel("큐에 추가")
+        .setLabel(L("Add to Queue", "큐에 추가"))
         .setStyle(ButtonStyle.Success)
         .setEmoji("✅"),
       new ButtonBuilder()
         .setCustomId(`queue-no:${message.channelId}`)
-        .setLabel("취소")
+        .setLabel(L("Cancel", "취소"))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji("❌"),
     );
 
     await message.reply({
-      content: "⏳ 이전 작업이 진행 중입니다. 완료 후 자동으로 처리할까요?",
+      content: L("⏳ A previous task is in progress. Process this automatically when done?", "⏳ 이전 작업이 진행 중입니다. 완료 후 자동으로 처리할까요?"),
       components: [row],
     });
     return;

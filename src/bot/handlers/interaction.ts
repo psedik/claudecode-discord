@@ -11,13 +11,14 @@ import { isAllowedUser } from "../../security/guard.js";
 import { sessionManager } from "../../claude/session-manager.js";
 import { upsertSession, getProject } from "../../db/database.js";
 import { findSessionDir, getLastAssistantMessage } from "../commands/sessions.js";
+import { L } from "../../utils/i18n.js";
 
 export async function handleButtonInteraction(
   interaction: ButtonInteraction,
 ): Promise<void> {
   if (!isAllowedUser(interaction.user.id)) {
     await interaction.reply({
-      content: "You are not authorized.",
+      content: L("You are not authorized.", "권한이 없습니다."),
       ephemeral: true,
     });
     return;
@@ -31,7 +32,7 @@ export async function handleButtonInteraction(
 
   if (!requestId) {
     await interaction.reply({
-      content: "Invalid button interaction.",
+      content: L("Invalid button interaction.", "잘못된 버튼 상호작용입니다."),
       ephemeral: true,
     });
     return;
@@ -42,12 +43,12 @@ export async function handleButtonInteraction(
     const channelId = requestId;
     const stopped = await sessionManager.stopSession(channelId);
     await interaction.update({
-      content: "⏹️ 작업이 중지되었습니다.",
+      content: L("⏹️ Task has been stopped.", "⏹️ 작업이 중지되었습니다."),
       components: [],
     });
     if (!stopped) {
       await interaction.followUp({
-        content: "활성 세션이 없습니다.",
+        content: L("No active session.", "활성 세션이 없습니다."),
         ephemeral: true,
       });
     }
@@ -60,14 +61,14 @@ export async function handleButtonInteraction(
     const confirmed = sessionManager.confirmQueue(channelId);
     if (!confirmed) {
       await interaction.update({
-        content: "⏳ 큐 요청이 만료되었습니다.",
+        content: L("⏳ Queue request has expired.", "⏳ 큐 요청이 만료되었습니다."),
         components: [],
       });
       return;
     }
     const queueSize = sessionManager.getQueueSize(channelId);
     await interaction.update({
-      content: `📨 메시지가 큐에 추가되었습니다 (${queueSize}/5). 이전 작업 완료 후 자동으로 처리됩니다.`,
+      content: L(`📨 Message added to queue (${queueSize}/5). It will be processed after the current task.`, `📨 메시지가 큐에 추가되었습니다 (${queueSize}/5). 이전 작업 완료 후 자동으로 처리됩니다.`),
       components: [],
     });
     return;
@@ -78,7 +79,7 @@ export async function handleButtonInteraction(
     const channelId = requestId;
     sessionManager.cancelQueue(channelId);
     await interaction.update({
-      content: "취소되었습니다.",
+      content: L("Cancelled.", "취소되었습니다."),
       components: [],
     });
     return;
@@ -94,12 +95,11 @@ export async function handleButtonInteraction(
     await interaction.update({
       embeds: [
         {
-          title: "Session Resumed",
-          description: [
-            `Session: \`${sessionId.slice(0, 8)}...\``,
-            "",
-            "Next message you send will resume this conversation.",
-          ].join("\n"),
+          title: L("Session Resumed", "세션 재개됨"),
+          description: L(
+            `Session: \`${sessionId.slice(0, 8)}...\`\n\nNext message you send will resume this conversation.`,
+            `세션: \`${sessionId.slice(0, 8)}...\`\n\n다음 메시지부터 이 대화가 재개됩니다.`
+          ),
           color: 0x00ff00,
         },
       ],
@@ -111,7 +111,7 @@ export async function handleButtonInteraction(
   // Handle session cancel button
   if (action === "session-cancel") {
     await interaction.update({
-      content: "Cancelled.",
+      content: L("Cancelled.", "취소되었습니다."),
       embeds: [],
       components: [],
     });
@@ -127,12 +127,12 @@ export async function handleButtonInteraction(
 
     const resolved = sessionManager.resolveQuestion(actualRequestId, selectedLabel);
     if (!resolved) {
-      await interaction.reply({ content: "This question has expired.", ephemeral: true });
+      await interaction.reply({ content: L("This question has expired.", "이 질문은 만료되었습니다."), ephemeral: true });
       return;
     }
 
     await interaction.update({
-      content: `✅ Selected: **${selectedLabel}**`,
+      content: L(`✅ Selected: **${selectedLabel}**`, `✅ 선택됨: **${selectedLabel}**`),
       embeds: [],
       components: [],
     });
@@ -144,7 +144,7 @@ export async function handleButtonInteraction(
     sessionManager.enableCustomInput(requestId, interaction.channelId);
 
     await interaction.update({
-      content: "✏️ 답변을 입력하세요...",
+      content: L("✏️ Type your answer...", "✏️ 답변을 입력하세요..."),
       embeds: [],
       components: [],
     });
@@ -159,7 +159,7 @@ export async function handleButtonInteraction(
 
     if (!project) {
       await interaction.update({
-        content: "Project not found.",
+        content: L("Project not found.", "프로젝트를 찾을 수 없습니다."),
         embeds: [],
         components: [],
       });
@@ -174,8 +174,8 @@ export async function handleButtonInteraction(
         await interaction.update({
           embeds: [
             {
-              title: "Session Deleted",
-              description: `Session \`${sessionId.slice(0, 8)}...\` has been deleted.`,
+              title: L("Session Deleted", "세션 삭제됨"),
+              description: L(`Session \`${sessionId.slice(0, 8)}...\` has been deleted.`, `세션 \`${sessionId.slice(0, 8)}...\`이(가) 삭제되었습니다.`),
               color: 0xff6b6b,
             },
           ],
@@ -183,7 +183,7 @@ export async function handleButtonInteraction(
         });
       } catch {
         await interaction.update({
-          content: "Failed to delete session file.",
+          content: L("Failed to delete session file.", "세션 파일 삭제에 실패했습니다."),
           embeds: [],
           components: [],
         });
@@ -206,16 +206,16 @@ export async function handleButtonInteraction(
   const resolved = sessionManager.resolveApproval(requestId, decision);
   if (!resolved) {
     await interaction.reply({
-      content: "This approval request has expired.",
+      content: L("This approval request has expired.", "이 승인 요청은 만료되었습니다."),
       ephemeral: true,
     });
     return;
   }
 
   const labels: Record<string, string> = {
-    approve: "✅ Approved",
-    deny: "❌ Denied",
-    "approve-all": "⚡ Auto-approve enabled for this channel",
+    approve: L("✅ Approved", "✅ 승인됨"),
+    deny: L("❌ Denied", "❌ 거부됨"),
+    "approve-all": L("⚡ Auto-approve enabled for this channel", "⚡ 이 채널에서 자동 승인이 활성화되었습니다"),
   };
 
   await interaction.update({
@@ -229,7 +229,7 @@ export async function handleSelectMenuInteraction(
 ): Promise<void> {
   if (!isAllowedUser(interaction.user.id)) {
     await interaction.reply({
-      content: "You are not authorized.",
+      content: L("You are not authorized.", "권한이 없습니다."),
       ephemeral: true,
     });
     return;
@@ -247,12 +247,12 @@ export async function handleSelectMenuInteraction(
 
     const resolved = sessionManager.resolveQuestion(askRequestId, answer);
     if (!resolved) {
-      await interaction.reply({ content: "This question has expired.", ephemeral: true });
+      await interaction.reply({ content: L("This question has expired.", "이 질문은 만료되었습니다."), ephemeral: true });
       return;
     }
 
     await interaction.update({
-      content: `✅ Selected: **${answer}**`,
+      content: L(`✅ Selected: **${answer}**`, `✅ 선택됨: **${answer}**`),
       embeds: [],
       components: [],
     });
@@ -272,8 +272,8 @@ export async function handleSelectMenuInteraction(
       await interaction.update({
         embeds: [
           {
-            title: "✨ New Session",
-            description: "새 세션이 준비되었습니다.\n다음 메시지부터 새로운 대화가 시작됩니다.",
+            title: L("✨ New Session", "✨ 새 세션"),
+            description: L("New session is ready.\nA new conversation will start from your next message.", "새 세션이 준비되었습니다.\n다음 메시지부터 새로운 대화가 시작됩니다."),
             color: 0x00ff00,
           },
         ],
@@ -305,29 +305,29 @@ export async function handleSelectMenuInteraction(
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(`session-resume:${selectedSessionId}`)
-        .setLabel("Resume")
+        .setLabel(L("Resume", "재개"))
         .setStyle(ButtonStyle.Success)
         .setEmoji("▶️"),
       new ButtonBuilder()
         .setCustomId(`session-delete:${selectedSessionId}`)
-        .setLabel("Delete")
+        .setLabel(L("Delete", "삭제"))
         .setStyle(ButtonStyle.Danger)
         .setEmoji("🗑️"),
       new ButtonBuilder()
         .setCustomId(`session-cancel:_`)
-        .setLabel("Cancel")
+        .setLabel(L("Cancel", "취소"))
         .setStyle(ButtonStyle.Secondary),
     );
 
     const preview = lastMessage && lastMessage !== "(no message)"
-      ? `\n\n**마지막 대화:**\n${lastMessage.slice(0, 300)}${lastMessage.length > 300 ? "..." : ""}`
+      ? `\n\n${L("**Last conversation:**", "**마지막 대화:**")}\n${lastMessage.slice(0, 300)}${lastMessage.length > 300 ? "..." : ""}`
       : "";
 
     await interaction.editReply({
       embeds: [
         {
-          title: "Session Selected",
-          description: `Session: \`${selectedSessionId.slice(0, 8)}...\`\n\nResume or delete this session?${preview}`,
+          title: L("Session Selected", "세션 선택됨"),
+          description: L(`Session: \`${selectedSessionId.slice(0, 8)}...\`\n\nResume or delete this session?`, `세션: \`${selectedSessionId.slice(0, 8)}...\`\n\n이 세션을 재개 또는 삭제하시겠습니까?`) + preview,
           color: 0x7c3aed,
         },
       ],

@@ -9,6 +9,7 @@ import {
   setAutoApprove,
 } from "../db/database.js";
 import { getConfig } from "../utils/config.js";
+import { L } from "../utils/i18n.js";
 import {
   createToolApprovalEmbed,
   createAskUserQuestionEmbed,
@@ -75,14 +76,14 @@ class SessionManager {
     let lastEditTime = 0;
     const stopRow = createStopButton(channelId);
     let currentMessage = await channel.send({
-      content: "⏳ Thinking...",
+      content: L("⏳ Thinking...", "⏳ 생각 중..."),
       components: [stopRow],
     });
     const EDIT_INTERVAL = 1500; // ms between edits (Discord rate limit friendly)
 
     // Activity tracking for progress display
     const startTime = Date.now();
-    let lastActivity = "Thinking...";
+    let lastActivity = L("Thinking...", "생각 중...");
     let toolUseCount = 0;
     let hasTextOutput = false;
 
@@ -119,15 +120,15 @@ class SessionManager {
 
             // Tool activity labels for Discord display
             const toolLabels: Record<string, string> = {
-              Read: "Reading files",
-              Glob: "Searching files",
-              Grep: "Searching code",
-              Write: "Writing file",
-              Edit: "Editing file",
-              Bash: "Running command",
-              WebSearch: "Searching web",
-              WebFetch: "Fetching URL",
-              TodoWrite: "Updating tasks",
+              Read: L("Reading files", "파일 읽는 중"),
+              Glob: L("Searching files", "파일 검색 중"),
+              Grep: L("Searching code", "코드 검색 중"),
+              Write: L("Writing file", "파일 작성 중"),
+              Edit: L("Editing file", "파일 편집 중"),
+              Bash: L("Running command", "명령어 실행 중"),
+              WebSearch: L("Searching web", "웹 검색 중"),
+              WebFetch: L("Fetching URL", "URL 가져오는 중"),
+              TodoWrite: L("Updating tasks", "작업 업데이트 중"),
             };
             const filePath = typeof input.file_path === "string"
               ? ` \`${(input.file_path as string).split(/[\\/]/).pop()}\``
@@ -197,7 +198,7 @@ class SessionManager {
                   updateSessionStatus(channelId, "online");
                   return {
                     behavior: "deny" as const,
-                    message: "Question timed out",
+                    message: L("Question timed out", "질문 시간 초과"),
                   };
                 }
 
@@ -331,7 +332,7 @@ class SessionManager {
           if (responseBuffer.length > 0) {
             const chunks = splitMessage(responseBuffer);
             try {
-              await currentMessage.edit(chunks[0] || "Done.");
+              await currentMessage.edit(chunks[0] || L("Done.", "완료."));
               for (let i = 1; i < chunks.length; i++) {
                 await channel.send(chunks[i]);
               }
@@ -351,7 +352,7 @@ class SessionManager {
 
           // Send result embed
           const resultEmbed = createResultEmbed(
-            resultMsg.result ?? "Task completed",
+            resultMsg.result ?? L("Task completed", "작업 완료"),
             resultMsg.total_cost_usd ?? 0,
             resultMsg.duration_ms ?? 0,
             getConfig().SHOW_COST,
@@ -406,8 +407,8 @@ class SessionManager {
         if (queue.length === 0) this.messageQueue.delete(channelId);
         const remaining = queue.length;
         const msg = remaining > 0
-          ? `📨 대기 중이던 메시지를 처리합니다... (남은 큐: ${remaining}개)`
-          : "📨 대기 중이던 메시지를 처리합니다...";
+          ? L(`📨 Processing queued message... (remaining: ${remaining})`, `📨 대기 중이던 메시지를 처리합니다... (남은 큐: ${remaining}개)`)
+          : L("📨 Processing queued message...", "📨 대기 중이던 메시지를 처리합니다...");
         channel.send(msg).catch(() => {});
         this.sendMessage(next.channel, next.prompt);
       }
