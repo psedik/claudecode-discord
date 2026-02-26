@@ -77,6 +77,11 @@ if [ "$1" = "--fg" ]; then
         echo "[claude-bot] Up to date"
     fi
 
+    if [ ! -d "node_modules" ]; then
+        echo "[claude-bot] Installing dependencies..."
+        npm install
+    fi
+
     if [ ! -d "dist" ]; then
         echo "[claude-bot] No build files found, building..."
         npm run build
