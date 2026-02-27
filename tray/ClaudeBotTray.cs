@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Windows.Forms;
 using System.Threading;
@@ -11,6 +12,10 @@ class ClaudeBotTray : Form
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, string lParam);
     private const int EM_SETCUEBANNER = 0x1501;
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+    private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
     private NotifyIcon trayIcon;
     private System.Windows.Forms.Timer refreshTimer;
@@ -595,6 +600,8 @@ class ClaudeBotTray : Form
             "/Users/yourname/projects", "/Users/you/projects", "C:\\Users\\yourname\\projects"
         };
 
+        SetDarkTitleBar(form);
+
         var textBoxes = new TextBox[fields.Length];
         int y = 58;
 
@@ -765,6 +772,28 @@ class ClaudeBotTray : Form
     private static readonly Color LinkBlue = Color.FromArgb(100, 160, 240);
     private static readonly Color AccentBlue = Color.FromArgb(66, 133, 244);
 
+    private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
+    {
+        var path = new GraphicsPath();
+        int d = radius * 2;
+        path.AddArc(bounds.X, bounds.Y, d, d, 180, 90);
+        path.AddArc(bounds.Right - d, bounds.Y, d, d, 270, 90);
+        path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0, 90);
+        path.AddArc(bounds.X, bounds.Bottom - d, d, d, 90, 90);
+        path.CloseFigure();
+        return path;
+    }
+
+    private static void SetDarkTitleBar(Form form)
+    {
+        try
+        {
+            int value = 1;
+            DwmSetWindowAttribute(form.Handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, sizeof(int));
+        }
+        catch { }
+    }
+
     private Button MakeDarkButton(string text, int left, int top, int width, int height, Color bgColor, Color fgColor)
     {
         var btn = new Button()
@@ -777,6 +806,7 @@ class ClaudeBotTray : Form
         btn.FlatAppearance.BorderSize = 0;
         btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(
             Math.Min(bgColor.R + 20, 255), Math.Min(bgColor.G + 20, 255), Math.Min(bgColor.B + 20, 255));
+        btn.Region = new Region(RoundedRect(new Rectangle(0, 0, width, height), 8));
         return btn;
     }
 
@@ -807,6 +837,8 @@ class ClaudeBotTray : Form
         string icoPath = Path.Combine(botDir, "docs", "icon.ico");
         if (File.Exists(icoPath))
             controlPanel.Icon = new Icon(icoPath);
+
+        SetDarkTitleBar(controlPanel);
 
         RebuildControlPanel();
         controlPanel.ShowDialog();
@@ -915,6 +947,7 @@ class ClaudeBotTray : Form
         string statusText = !hasEnv ? L("Setup Required", "설정 필요") : (running ? L("Running", "실행 중") : L("Stopped", "중지됨"));
         Color statusColor = !hasEnv ? Color.Orange : (running ? Color.LimeGreen : Color.Red);
         var statusPanel = new Panel() { Left = 25, Top = y, Width = btnWidth, Height = 50, BackColor = BgPanel };
+        statusPanel.Region = new Region(RoundedRect(new Rectangle(0, 0, btnWidth, 50), 8));
         var statusDot = new Label() { Left = 14, Top = 14, Width = 24, Height = 24, Text = "", BackColor = Color.Transparent };
         statusDot.Paint += (s, e) => {
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
