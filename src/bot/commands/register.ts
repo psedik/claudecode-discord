@@ -44,6 +44,21 @@ export async function execute(
     return;
   }
 
+  // Create directory if it doesn't exist (new project)
+  if (!fs.existsSync(projectPath)) {
+    const resolved = path.resolve(projectPath);
+    const baseDir = path.resolve(config.BASE_PROJECT_DIR);
+    if (!resolved.startsWith(baseDir + path.sep) && resolved !== baseDir) {
+      await interaction.editReply({ content: L(`Invalid path: Path must be within ${baseDir}`, `잘못된 경로: ${baseDir} 내에 있어야 합니다`) });
+      return;
+    }
+    if (projectPath.includes("..")) {
+      await interaction.editReply({ content: L("Invalid path: Path must not contain '..'", "잘못된 경로: '..'을 포함할 수 없습니다") });
+      return;
+    }
+    fs.mkdirSync(projectPath, { recursive: true });
+  }
+
   // Validate path
   const error = validateProjectPath(projectPath);
   if (error) {
@@ -89,6 +104,11 @@ export async function autocomplete(
       choices.push({ name: `. (${baseDir})`, value: baseDir });
     }
     choices.push(...dirs.map((name) => ({ name, value: name })));
+
+    // If user typed something that doesn't exactly match any existing dir, offer to create it
+    if (focused && !dirs.some((d) => d.toLowerCase() === focused.toLowerCase())) {
+      choices.push({ name: `📁 Create new: ${focused}`, value: focused });
+    }
 
     await interaction.respond(choices.slice(0, 25));
   } catch {

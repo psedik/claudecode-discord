@@ -751,6 +751,35 @@ class ClaudeBotTray : Form
 
     private Form controlPanel = null;
 
+    // Dark theme colors
+    private static readonly Color BgDark = Color.FromArgb(42, 42, 42);
+    private static readonly Color BgPanel = Color.FromArgb(58, 58, 58);
+    private static readonly Color BgButton = Color.FromArgb(72, 72, 72);
+    private static readonly Color FgWhite = Color.FromArgb(230, 230, 230);
+    private static readonly Color FgGray = Color.FromArgb(150, 150, 150);
+    private static readonly Color FgDimGray = Color.FromArgb(110, 110, 110);
+    private static readonly Color SepColor = Color.FromArgb(65, 65, 65);
+    private static readonly Color BtnStop = Color.FromArgb(140, 60, 60);
+    private static readonly Color BtnRestart = Color.FromArgb(130, 110, 55);
+    private static readonly Color BtnSettings = Color.FromArgb(50, 70, 130);
+    private static readonly Color LinkBlue = Color.FromArgb(100, 160, 240);
+    private static readonly Color AccentBlue = Color.FromArgb(66, 133, 244);
+
+    private Button MakeDarkButton(string text, int left, int top, int width, int height, Color bgColor, Color fgColor)
+    {
+        var btn = new Button()
+        {
+            Text = text, Left = left, Top = top, Width = width, Height = height,
+            FlatStyle = FlatStyle.Flat, BackColor = bgColor, ForeColor = fgColor,
+            Font = new Font(FontFamily.GenericSansSerif, 9.5f, FontStyle.Bold),
+            Cursor = Cursors.Hand
+        };
+        btn.FlatAppearance.BorderSize = 0;
+        btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(
+            Math.Min(bgColor.R + 20, 255), Math.Min(bgColor.G + 20, 255), Math.Min(bgColor.B + 20, 255));
+        return btn;
+    }
+
     private void ShowControlPanel()
     {
         // If already open, bring to front
@@ -771,6 +800,8 @@ class ClaudeBotTray : Form
             FormBorderStyle = FormBorderStyle.FixedDialog,
             MaximizeBox = false,
             MinimizeBox = false,
+            BackColor = BgDark,
+            ForeColor = FgWhite,
         };
 
         string icoPath = Path.Combine(botDir, "docs", "icon.ico");
@@ -800,29 +831,39 @@ class ClaudeBotTray : Form
         int btnWidth = panelWidth - 60;
         int halfBtnWidth = (btnWidth - 10) / 2;
 
-        int y = 15;
+        int y = 20;
 
-        // Header: Title + Version + Language toggle
+        // Header: Icon + Title + Version + Language toggle
+        string iconPngPath = Path.Combine(botDir, "docs", "icon-rounded.png");
+        if (File.Exists(iconPngPath))
+        {
+            var iconBox = new PictureBox()
+            {
+                Left = 25, Top = y, Width = 48, Height = 48,
+                SizeMode = PictureBoxSizeMode.Zoom,
+                BackColor = Color.Transparent
+            };
+            try { iconBox.Image = Image.FromFile(iconPngPath); } catch { }
+            controlPanel.Controls.Add(iconBox);
+        }
+
         var titleLabel = new Label()
         {
             Text = "Claude Discord Bot",
-            Left = 25,
-            Top = y,
-            Width = 280,
-            Height = 22,
-            Font = new Font(FontFamily.GenericSansSerif, 14, FontStyle.Bold)
+            Left = 82, Top = y,
+            Width = 250, Height = 24,
+            Font = new Font(FontFamily.GenericSansSerif, 14, FontStyle.Bold),
+            ForeColor = FgWhite, BackColor = Color.Transparent
         };
         controlPanel.Controls.Add(titleLabel);
 
         var verSubLabel = new Label()
         {
             Text = currentVersion,
-            Left = 25,
-            Top = y + 24,
-            Width = 280,
-            Height = 16,
+            Left = 82, Top = y + 26,
+            Width = 250, Height = 16,
             Font = new Font(FontFamily.GenericSansSerif, 9),
-            ForeColor = Color.FromArgb(140, 140, 140)
+            ForeColor = FgGray, BackColor = Color.Transparent
         };
         controlPanel.Controls.Add(verSubLabel);
 
@@ -830,37 +871,31 @@ class ClaudeBotTray : Form
         var enBtn = new Label()
         {
             Text = "EN",
-            Left = panelWidth - 110,
-            Top = y + 4,
-            Width = 32,
-            Height = 22,
+            Left = panelWidth - 110, Top = y + 6,
+            Width = 32, Height = 22,
             TextAlign = ContentAlignment.MiddleCenter,
             Font = new Font(FontFamily.GenericSansSerif, 9, !isKorean ? FontStyle.Bold : FontStyle.Regular),
-            ForeColor = !isKorean ? Color.White : Color.FromArgb(100, 100, 100),
-            BackColor = !isKorean ? Color.FromArgb(66, 133, 244) : Color.FromArgb(230, 230, 230),
+            ForeColor = !isKorean ? Color.White : FgDimGray,
+            BackColor = !isKorean ? AccentBlue : BgButton,
             Cursor = Cursors.Hand
         };
         var divLabel = new Label()
         {
             Text = "|",
-            Left = panelWidth - 78,
-            Top = y + 4,
-            Width = 10,
-            Height = 22,
+            Left = panelWidth - 78, Top = y + 6,
+            Width = 10, Height = 22,
             TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.FromArgb(180, 180, 180)
+            ForeColor = SepColor, BackColor = Color.Transparent
         };
         var krBtn = new Label()
         {
             Text = "KR",
-            Left = panelWidth - 68,
-            Top = y + 4,
-            Width = 32,
-            Height = 22,
+            Left = panelWidth - 68, Top = y + 6,
+            Width = 32, Height = 22,
             TextAlign = ContentAlignment.MiddleCenter,
             Font = new Font(FontFamily.GenericSansSerif, 9, isKorean ? FontStyle.Bold : FontStyle.Regular),
-            ForeColor = isKorean ? Color.White : Color.FromArgb(100, 100, 100),
-            BackColor = isKorean ? Color.FromArgb(66, 133, 244) : Color.FromArgb(230, 230, 230),
+            ForeColor = isKorean ? Color.White : FgDimGray,
+            BackColor = isKorean ? AccentBlue : BgButton,
             Cursor = Cursors.Hand
         };
         enBtn.Click += (s, ev) => { SetLanguage(false); RebuildControlPanel(); };
@@ -869,24 +904,29 @@ class ClaudeBotTray : Form
         controlPanel.Controls.Add(divLabel);
         controlPanel.Controls.Add(krBtn);
 
-        y += 48;
+        y += 58;
 
         // Separator after header
-        var headerSep = new Label() { Left = 25, Top = y, Width = btnWidth, Height = 1, BackColor = Color.FromArgb(220, 220, 220) };
+        var headerSep = new Label() { Left = 25, Top = y, Width = btnWidth, Height = 1, BackColor = SepColor };
         controlPanel.Controls.Add(headerSep);
-        y += 10;
+        y += 15;
 
         // Status indicator
         string statusText = !hasEnv ? L("Setup Required", "설정 필요") : (running ? L("Running", "실행 중") : L("Stopped", "중지됨"));
         Color statusColor = !hasEnv ? Color.Orange : (running ? Color.LimeGreen : Color.Red);
-        var statusPanel = new Panel() { Left = 25, Top = y, Width = btnWidth, Height = 50, BackColor = Color.FromArgb(240, 240, 240) };
-        var statusDot = new Label() { Left = 14, Top = 14, Width = 24, Height = 24, Text = "" };
+        var statusPanel = new Panel() { Left = 25, Top = y, Width = btnWidth, Height = 50, BackColor = BgPanel };
+        var statusDot = new Label() { Left = 14, Top = 14, Width = 24, Height = 24, Text = "", BackColor = Color.Transparent };
         statusDot.Paint += (s, e) => {
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             e.Graphics.FillEllipse(new SolidBrush(statusColor), 2, 2, 18, 18);
         };
         statusPanel.Controls.Add(statusDot);
-        var statusLabel = new Label() { Left = 42, Top = 15, Width = 320, Height = 24, Text = statusText, Font = new Font(FontFamily.GenericSansSerif, 12, FontStyle.Bold) };
+        var statusLabel = new Label() {
+            Left = 42, Top = 15, Width = 320, Height = 24,
+            Text = statusText,
+            Font = new Font(FontFamily.GenericSansSerif, 12, FontStyle.Bold),
+            ForeColor = FgWhite, BackColor = Color.Transparent
+        };
         statusPanel.Controls.Add(statusLabel);
         controlPanel.Controls.Add(statusPanel);
         y += 62;
@@ -896,76 +936,78 @@ class ClaudeBotTray : Form
         {
             if (running)
             {
-                var stopBtn = new Button() { Text = L("Stop Bot", "봇 중지"), Left = 25, Top = y, Width = halfBtnWidth, Height = 40 };
+                var stopBtn = MakeDarkButton(L("Stop Bot", "봇 중지"), 25, y, halfBtnWidth, 42, BtnStop, Color.FromArgb(230, 120, 120));
                 stopBtn.Click += (s, ev) => { StopBot(null, null); controlPanel.Close(); };
                 controlPanel.Controls.Add(stopBtn);
 
-                var restartBtn = new Button() { Text = L("Restart Bot", "봇 재시작"), Left = 25 + halfBtnWidth + 10, Top = y, Width = halfBtnWidth, Height = 40 };
+                var restartBtn = MakeDarkButton(L("Restart Bot", "봇 재시작"), 25 + halfBtnWidth + 10, y, halfBtnWidth, 42, BtnRestart, Color.FromArgb(220, 180, 90));
                 restartBtn.Click += (s, ev) => { RestartBot(null, null); controlPanel.Close(); };
                 controlPanel.Controls.Add(restartBtn);
             }
             else
             {
-                var startBtn = new Button() { Text = L("Start Bot", "봇 시작"), Left = 25, Top = y, Width = btnWidth, Height = 40 };
+                var startBtn = MakeDarkButton(L("Start Bot", "봇 시작"), 25, y, btnWidth, 42, BgButton, FgWhite);
                 startBtn.Click += (s, ev) => { StartBot(null, null); controlPanel.Close(); };
                 controlPanel.Controls.Add(startBtn);
             }
-            y += 50;
+            y += 52;
         }
 
         // Settings button
-        var settingsBtn = new Button() { Text = L("Settings...", "설정..."), Left = 25, Top = y, Width = btnWidth, Height = 40 };
+        var settingsBtn = MakeDarkButton(L("Settings...", "설정..."), 25, y, btnWidth, 42, BtnSettings, Color.FromArgb(100, 160, 240));
         settingsBtn.Click += (s, ev) => {
             OpenSettings(null, null);
-            // Refresh panel after settings change
             UpdateStatus();
             BuildMenu();
         };
         controlPanel.Controls.Add(settingsBtn);
-        y += 48;
+        y += 50;
 
         if (hasEnv)
         {
             // View Log
-            var logBtn = new Button() { Text = L("View Log", "로그 보기"), Left = 25, Top = y, Width = halfBtnWidth, Height = 40 };
+            var logBtn = MakeDarkButton(L("View Log", "로그 보기"), 25, y, halfBtnWidth, 42, BgButton, FgWhite);
             logBtn.Click += (s, ev) => { OpenLog(null, null); };
             controlPanel.Controls.Add(logBtn);
 
             // Open Folder
-            var folderBtn = new Button() { Text = L("Open Folder", "폴더 열기"), Left = 25 + halfBtnWidth + 10, Top = y, Width = halfBtnWidth, Height = 40 };
+            var folderBtn = MakeDarkButton(L("Open Folder", "폴더 열기"), 25 + halfBtnWidth + 10, y, halfBtnWidth, 42, BgButton, FgWhite);
             folderBtn.Click += (s, ev) => { OpenFolder(null, null); };
             controlPanel.Controls.Add(folderBtn);
-            y += 48;
+            y += 52;
         }
 
         // Separator line
-        var sep1 = new Label() { Left = 25, Top = y, Width = btnWidth, Height = 1, BackColor = Color.FromArgb(220, 220, 220) };
+        var sep1 = new Label() { Left = 25, Top = y, Width = btnWidth, Height = 1, BackColor = SepColor };
         controlPanel.Controls.Add(sep1);
-        y += 10;
+        y += 12;
 
         // Auto-start checkbox
-        var autoCheck = new CheckBox() { Text = L("Auto Run on Startup", "시작 시 자동 실행"), Left = 25, Top = y, Width = btnWidth, Height = 22, Font = new Font(FontFamily.GenericSansSerif, 9.5f), Checked = IsAutoStartEnabled() };
+        var autoCheck = new CheckBox()
+        {
+            Text = L("Auto Run on Startup", "시작 시 자동 실행"),
+            Left = 25, Top = y, Width = btnWidth, Height = 22,
+            Font = new Font(FontFamily.GenericSansSerif, 9.5f),
+            ForeColor = FgWhite, BackColor = Color.Transparent,
+            Checked = IsAutoStartEnabled()
+        };
         autoCheck.CheckedChanged += (s, ev) => { ToggleAutoStart(null, null); };
         controlPanel.Controls.Add(autoCheck);
-        y += 32;
+        y += 36;
 
         // Update button
         if (updateAvailable)
         {
-            var updateBtn = new Button()
-            {
-                Text = L("Update Available - Click to Update", "업데이트 가능 - 클릭하여 업데이트"),
-                Left = 25, Top = y, Width = btnWidth, Height = 40,
-                BackColor = Color.FromArgb(66, 133, 244), ForeColor = Color.White
-            };
-            updateBtn.FlatStyle = FlatStyle.Flat;
+            var updateBtn = MakeDarkButton(
+                L("Update Available - Click to Update", "업데이트 가능 - 클릭하여 업데이트"),
+                25, y, btnWidth, 42, AccentBlue, Color.White);
             updateBtn.Click += (s, ev) => { controlPanel.Close(); PerformUpdate(null, null); };
             controlPanel.Controls.Add(updateBtn);
-            y += 48;
+            y += 52;
         }
         else
         {
-            var checkUpdateBtn = new Button() { Text = L("Check for Updates", "업데이트 확인"), Left = 25, Top = y, Width = btnWidth, Height = 40 };
+            var checkUpdateBtn = MakeDarkButton(L("Check for Updates", "업데이트 확인"), 25, y, btnWidth, 42, BgButton, FgWhite);
             checkUpdateBtn.Click += (s, ev) => {
                 CheckForUpdates();
                 if (updateAvailable)
@@ -981,11 +1023,11 @@ class ClaudeBotTray : Form
                 }
             };
             controlPanel.Controls.Add(checkUpdateBtn);
-            y += 48;
+            y += 52;
         }
 
         // Separator line
-        var sep2 = new Label() { Left = 25, Top = y, Width = btnWidth, Height = 1, BackColor = Color.FromArgb(220, 220, 220) };
+        var sep2 = new Label() { Left = 25, Top = y, Width = btnWidth, Height = 1, BackColor = SepColor };
         controlPanel.Controls.Add(sep2);
         y += 12;
 
@@ -994,22 +1036,22 @@ class ClaudeBotTray : Form
             Text = L("Closing this window does not stop the bot.\nThe bot runs in the background. Check the tray icon for status.",
                       "이 창을 닫아도 봇은 중지되지 않습니다.\n봇은 백그라운드에서 실행됩니다. 트레이 아이콘에서 상태를 확인하세요."),
             Left = 25, Top = y, Width = btnWidth, Height = 40,
-            ForeColor = Color.FromArgb(100, 100, 100),
+            ForeColor = FgDimGray, BackColor = Color.Transparent,
             Font = new Font(FontFamily.GenericSansSerif, 8.5f)
         };
         controlPanel.Controls.Add(infoLabel);
         y += 48;
 
         // Quit button
-        var quitBtn = new Button() { Text = L("Quit Bot", "봇 종료"), Left = 25, Top = y, Width = btnWidth, Height = 40, ForeColor = Color.Gray };
+        var quitBtn = MakeDarkButton(L("Quit Bot", "봇 종료"), 25, y, btnWidth, 42, BgButton, FgGray);
         quitBtn.Click += (s, ev) => { controlPanel.Close(); QuitAll(null, null); };
         controlPanel.Controls.Add(quitBtn);
-        y += 50;
+        y += 52;
 
         // Separator line
-        var sep3 = new Label() { Left = 25, Top = y, Width = btnWidth, Height = 1, BackColor = Color.FromArgb(220, 220, 220) };
+        var sep3 = new Label() { Left = 25, Top = y, Width = btnWidth, Height = 1, BackColor = SepColor };
         controlPanel.Controls.Add(sep3);
-        y += 10;
+        y += 12;
 
         // GitHub link
         var ghLink = new LinkLabel()
@@ -1018,7 +1060,7 @@ class ClaudeBotTray : Form
             Left = 25, Top = y, Width = btnWidth, Height = 20,
             TextAlign = ContentAlignment.MiddleCenter,
             Font = new Font(FontFamily.GenericSansSerif, 8.5f),
-            LinkColor = Color.FromArgb(66, 133, 244)
+            LinkColor = LinkBlue, BackColor = Color.Transparent
         };
         ghLink.LinkClicked += (s, ev) => { Process.Start("https://github.com/chadingTV/claudecode-discord"); };
         controlPanel.Controls.Add(ghLink);
@@ -1031,7 +1073,7 @@ class ClaudeBotTray : Form
             Left = 25, Top = y, Width = btnWidth, Height = 20,
             TextAlign = ContentAlignment.MiddleCenter,
             Font = new Font(FontFamily.GenericSansSerif, 8.5f),
-            LinkColor = Color.FromArgb(66, 133, 244)
+            LinkColor = LinkBlue, BackColor = Color.Transparent
         };
         issueLink.LinkClicked += (s, ev) => { Process.Start("https://github.com/chadingTV/claudecode-discord/issues"); };
         controlPanel.Controls.Add(issueLink);
@@ -1045,10 +1087,10 @@ class ClaudeBotTray : Form
             Left = 25, Top = y, Width = btnWidth, Height = 18,
             TextAlign = ContentAlignment.MiddleCenter,
             Font = new Font(FontFamily.GenericSansSerif, 8f),
-            ForeColor = Color.Gray
+            ForeColor = FgDimGray, BackColor = Color.Transparent
         };
         controlPanel.Controls.Add(starLabel);
-        y += 25;
+        y += 28;
 
         controlPanel.Height = y + 45;
 
