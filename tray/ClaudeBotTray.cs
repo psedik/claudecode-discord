@@ -559,7 +559,7 @@ class ClaudeBotTray : Form
         {
             Text = L("Claude Discord Bot Settings", "Claude Discord Bot 설정"),
             Width = 500,
-            Height = 460,
+            Height = 520,
             StartPosition = FormStartPosition.CenterScreen,
             FormBorderStyle = FormBorderStyle.FixedDialog,
             MaximizeBox = false,
@@ -604,6 +604,7 @@ class ClaudeBotTray : Form
 
         SetDarkTitleBar(form);
 
+        var tbFont = new Font(FontFamily.GenericSansSerif, 10f);
         var textBoxes = new TextBox[fields.Length];
         int y = 58;
 
@@ -611,11 +612,11 @@ class ClaudeBotTray : Form
         {
             var label = new Label() { Text = fields[i][1], Left = 15, Top = y, Width = 450, Font = new Font(FontFamily.GenericSansSerif, 9, FontStyle.Bold), ForeColor = FgWhite, BackColor = Color.Transparent };
             form.Controls.Add(label);
-            y += 20;
+            y += 22;
 
             if (fields[i][0] == "BASE_PROJECT_DIR")
             {
-                var tb = new TextBox() { Left = 15, Top = y, Width = 360, BackColor = BgPanel, ForeColor = FgWhite, BorderStyle = BorderStyle.FixedSingle };
+                var tb = new TextBox() { Left = 15, Top = y, Width = 360, BackColor = BgPanel, ForeColor = FgWhite, BorderStyle = BorderStyle.FixedSingle, Font = tbFont };
                 string val = "";
                 env.TryGetValue(fields[i][0], out val);
                 if (val != null && exampleValues.Contains(val)) val = "";
@@ -631,7 +632,7 @@ class ClaudeBotTray : Form
                 form.Controls.Add(tb);
                 textBoxes[i] = tb;
 
-                var browseBtn = new Button() { Text = L("Browse...", "찾아보기..."), Left = 380, Top = y - 1, Width = 85, FlatStyle = FlatStyle.Flat, BackColor = BgButton, ForeColor = FgWhite };
+                var browseBtn = new Button() { Text = L("Browse...", "찾아보기..."), Left = 380, Top = y, Width = 85, Height = tb.Height, FlatStyle = FlatStyle.Flat, BackColor = BgButton, ForeColor = FgWhite };
                 browseBtn.FlatAppearance.BorderSize = 0;
                 int idx = i;
                 browseBtn.Click += (s, ev) =>
@@ -650,7 +651,7 @@ class ClaudeBotTray : Form
             }
             else
             {
-                var tb = new TextBox() { Left = 15, Top = y, Width = 450, BackColor = BgPanel, ForeColor = FgWhite, BorderStyle = BorderStyle.FixedSingle };
+                var tb = new TextBox() { Left = 15, Top = y, Width = 450, BackColor = BgPanel, ForeColor = FgWhite, BorderStyle = BorderStyle.FixedSingle, Font = tbFont };
                 string val = "";
                 env.TryGetValue(fields[i][0], out val);
                 if (val != null && exampleValues.Contains(val)) val = "";
@@ -681,7 +682,7 @@ class ClaudeBotTray : Form
                 form.Controls.Add(tb);
                 textBoxes[i] = tb;
             }
-            y += 30;
+            y += 34;
         }
 
         var note = new Label() { Text = L("* Max plan users should set Show Cost to false",
