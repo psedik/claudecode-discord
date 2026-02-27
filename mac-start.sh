@@ -109,11 +109,20 @@ fi
 # Compile menu bar app (rebuild if source is newer than binary)
 if [ -f "$SCRIPT_DIR/menubar/ClaudeBotMenu.swift" ]; then
     if [ ! -f "$MENUBAR" ] || [ "$SCRIPT_DIR/menubar/ClaudeBotMenu.swift" -nt "$MENUBAR" ]; then
-        echo "🔨 Building menu bar app..."
-        if ! swiftc -o "$MENUBAR" "$SCRIPT_DIR/menubar/ClaudeBotMenu.swift" -framework Cocoa 2>/dev/null; then
-            echo "⚠ Menu bar app build failed. Install Xcode Command Line Tools:"
-            echo "  xcode-select --install"
+        # Check Xcode Command Line Tools and license
+        if ! xcode-select -p &>/dev/null; then
+            echo "⚠ Xcode Command Line Tools required. Installing..."
+            xcode-select --install
+            echo "  Complete the installation dialog, then re-run this script."
+            exit 0
         fi
+        if ! xcrun --find swiftc &>/dev/null; then
+            echo "⚠ Xcode license not accepted. Please run:"
+            echo "  sudo xcodebuild -license accept"
+            exit 1
+        fi
+        echo "🔨 Building menu bar app..."
+        swiftc -o "$MENUBAR" "$SCRIPT_DIR/menubar/ClaudeBotMenu.swift" -framework Cocoa
     fi
 fi
 
