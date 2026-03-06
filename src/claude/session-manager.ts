@@ -391,7 +391,7 @@ class SessionManager {
           upsertSession(dbId, channelId, null, "offline");
           clearInterval(heartbeatInterval);
           this.sessions.delete(channelId);
-          await currentMessage.edit({ content: "⚠️ Session resume failed, starting fresh...", components: [] });
+          await currentMessage.delete().catch(() => {});
           await this.sendMessage(channel, prompt);
           return;
         }
