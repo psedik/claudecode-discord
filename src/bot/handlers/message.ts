@@ -10,10 +10,9 @@ import { L } from "../../utils/i18n.js";
 
 async function transcribeVoice(filePath: string): Promise<string | null> {
   try {
-    const credentials = JSON.parse(fs.readFileSync(`${process.env.HOME}/.subctl/credentials.json`, "utf-8"));
-    const groqKey = credentials.groq_api_key;
+    const groqKey = process.env.GROQ_API_KEY;
     if (!groqKey) {
-      console.warn("[voice] groq_api_key not found in credentials.json");
+      console.warn("[voice] GROQ_API_KEY not set in .env");
       return null;
     }
 
