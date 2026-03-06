@@ -8,6 +8,38 @@ import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 import { L } from "../../utils/i18n.js";
 
+async function transcribeVoice(filePath: string): Promise<string | null> {
+  try {
+    const credentials = JSON.parse(fs.readFileSync(`${process.env.HOME}/.subctl/credentials.json`, "utf-8"));
+    const groqKey = credentials.groq_api_key;
+    if (!groqKey) {
+      console.warn("[voice] groq_api_key not found in credentials.json");
+      return null;
+    }
+
+    const formData = new FormData();
+    formData.append("model", "whisper-large-v3");
+    formData.append("file", new Blob([fs.readFileSync(filePath)]), path.basename(filePath));
+    formData.append("response_format", "text");
+
+    const res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${groqKey}` },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      console.warn("[voice] Groq API error:", res.status, await res.text());
+      return null;
+    }
+
+    return (await res.text()).trim();
+  } catch (e) {
+    console.warn("[voice] Transcription failed:", e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
 
 // Dangerous executable extensions that should not be downloaded
@@ -98,6 +130,31 @@ export async function handleMessage(message: Message): Promise<void> {
   const skippedMessages: string[] = [];
 
   for (const [, attachment] of message.attachments) {
+    // Handle voice messages (Discord sends them as .ogg with waveform data)
+    const ext = path.extname(attachment.name ?? "").toLowerCase();
+    if (ext === ".ogg" || (attachment as any).waveform) {
+      await message.react("🎙️");
+      const tmpPath = path.join("/tmp", `discord-voice-${Date.now()}.ogg`);
+      try {
+        const res = await fetch(attachment.url);
+        if (res.ok && res.body) {
+          await pipeline(Readable.fromWeb(res.body as any), fs.createWriteStream(tmpPath));
+          const transcript = await transcribeVoice(tmpPath);
+          fs.unlinkSync(tmpPath);
+          if (transcript) {
+            prompt = transcript;
+            await message.react("✅");
+          } else {
+            await message.reply(L("Voice transcription failed.", "음성 변환에 실패했습니다."));
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("[voice] Download failed:", e instanceof Error ? e.message : e);
+      }
+      continue;
+    }
+
     const result = await downloadAttachment(attachment, project.project_path);
     if (!result) continue;
     if ("skipped" in result) {
