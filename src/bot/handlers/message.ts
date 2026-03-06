@@ -67,7 +67,7 @@ async function downloadAttachment(
     return { skipped: L(`Skipped: \`${attachment.name}\` (${sizeMB}MB exceeds 25MB limit)`, `건너뜀: \`${attachment.name}\` (${sizeMB}MB, 25MB 제한 초과)`) };
   }
 
-  const uploadDir = path.join(projectPath, ".claude-uploads");
+  const uploadDir = path.join("/tmp", "claude-uploads");
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
