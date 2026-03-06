@@ -363,6 +363,7 @@ class SessionManager {
         }
       }
     } catch (error) {
+      console.error(`[session-error ${new Date().toISOString()}] ${channelId}:`, error);
       const rawMsg =
         error instanceof Error ? error.message : "Unknown error occurred";
 
@@ -384,6 +385,16 @@ class SessionManager {
           errMsg = `API Error ${jsonMatch[1]}. Please try again later.`;
         }
       } else if (rawMsg.includes("process exited with code")) {
+        // If we were trying to resume a session and it failed, clear it and retry fresh
+        if (resumeSessionId) {
+          console.warn(`[session-resume-fail] Clearing stale session for ${channelId}, retrying fresh.`);
+          upsertSession(dbId, channelId, null, "offline");
+          clearInterval(heartbeatInterval);
+          this.sessions.delete(channelId);
+          await currentMessage.edit({ content: "⚠️ Session resume failed, starting fresh...", components: [] });
+          await this.sendMessage(channel, prompt);
+          return;
+        }
         errMsg = `${rawMsg}. The server may be temporarily unavailable — please try again later.`;
       }
 
