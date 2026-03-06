@@ -92,6 +92,7 @@ async function downloadAttachment(
 }
 
 export async function handleMessage(message: Message): Promise<void> {
+  console.log(`[msg] author=${message.author.id} attachments=${message.attachments.size} flags=${message.flags.toArray().join(',')} content="${message.content.slice(0,50)}"`);
   // Ignore bots and DMs
   if (message.author.bot || !message.guild) return;
 
@@ -131,6 +132,7 @@ export async function handleMessage(message: Message): Promise<void> {
   for (const [, attachment] of message.attachments) {
     // Handle voice messages (Discord sends them as .ogg with waveform data)
     const ext = path.extname(attachment.name ?? "").toLowerCase();
+    console.log(`[attachment] name=${attachment.name} ext=${ext} waveform=${!!(attachment as any).waveform} contentType=${attachment.contentType}`);
     if (ext === ".ogg" || (attachment as any).waveform) {
       await message.react("🎙️");
       const tmpPath = path.join("/tmp", `discord-voice-${Date.now()}.ogg`);

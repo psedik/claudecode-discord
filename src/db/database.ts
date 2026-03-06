@@ -29,6 +29,9 @@ export function initDatabase(): void {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  // Clear session IDs on startup — they are invalid after restart
+  db.prepare("UPDATE sessions SET session_id = NULL, status = 'offline'").run();
 }
 
 export function getDb(): Database.Database {
