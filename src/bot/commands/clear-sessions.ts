@@ -27,6 +27,9 @@ export async function execute(
     return;
   }
 
+  // Always clear session_id from DB so bot doesn't try to resume after clear
+  getDb().prepare("UPDATE sessions SET session_id = NULL WHERE channel_id = ?").run(channelId);
+
   const sessionDir = findSessionDir(project.project_path);
   if (!sessionDir) {
     await interaction.editReply({
@@ -52,9 +55,6 @@ export async function execute(
       // skip files that can't be deleted
     }
   }
-
-  // Also clear session_id from DB so bot doesn't try to resume deleted sessions
-  getDb().prepare("UPDATE sessions SET session_id = NULL WHERE channel_id = ?").run(channelId);
 
   await interaction.editReply({
     embeds: [
